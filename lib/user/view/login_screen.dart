@@ -2,14 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sodamham/common/color.dart';
+import 'package:sodamham/user/view/component/auth_text_field.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  @override
   Widget build(BuildContext context) {
+    final usernameController = TextEditingController();
+    final passwordController = TextEditingController();
+
     return Scaffold(
-      backgroundColor: Color(0XFFFBFAF5),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 50.0),
@@ -17,12 +25,18 @@ class LoginScreen extends StatelessWidget {
             children: [
               _Title(),
               SizedBox(height: 53.h),
-              _Login(),
+              _Username(usernameController: usernameController),
+              SizedBox(height: 10.h),
+              _UserPW(
+                passwordController: passwordController,
+              ),
+              _FindAuthButton(),
               // _SocialLogin(),
             ],
           ),
         ),
       ),
+      backgroundColor: Color(0XFFFBFAF5),
     );
   }
 }
@@ -49,11 +63,11 @@ class _Title extends StatelessWidget {
           child: Text(
             '; 편안함을 담아 나누다',
             style: TextStyle(
-              color: Color(0xffDABAAB),
-              // fontFamily: 'SeoulHangang',
+              color: Color(0XFFDABAAB),
+              fontFamily: 'SeoulHangang',
               fontWeight: FontWeight.w500,
-              fontSize: 12.sp,
               letterSpacing: -0.9.sp,
+              fontSize: 12.sp,
               height: 0.2,
             ),
           ),
@@ -63,44 +77,71 @@ class _Title extends StatelessWidget {
   }
 }
 
-class _Login extends StatelessWidget {
-  const _Login({super.key});
+class _Username extends StatelessWidget {
+  final TextEditingController? usernameController;
+
+  const _Username({super.key, this.usernameController});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          height: 24.h,
-          child: TextField(
-            style: TextStyle(
-              color: Color(0xffB1AEAE),
-              // fontFamily: 'SeoulHangang',
-              fontWeight: FontWeight.w500,
-              fontSize: 16.sp,
-            ),
-            textAlignVertical: TextAlignVertical.center,
-            decoration: InputDecoration(
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0xffD5C7BC)),
-              ),
-              focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0xffD5C7BC)),
-              ),
-              prefixIcon: SvgPicture.asset(
-                'asset/icon/person.svg',
-              ),
-              // isDense: true,
-              hintText: '아이디',
-              hintStyle: TextStyle(
-                  color: Color(0xffB1AEAE),
-                  // fontFamily: 'SeoulHangang',
-                  fontWeight: FontWeight.w500,
-                  fontSize: 16.sp),
-            ),
-          ),
-        )
-      ],
+    return Container(
+      height: 24.h,
+      child: AuthTextField(
+        onChanged: (_) {},
+        icon: SvgPicture.asset(
+          'asset/icon/person.svg',
+          width: 18.w,
+          height: 18.h,
+        ),
+        controller: usernameController,
+        hintText: '아이디',
+      ),
+    );
+  }
+}
+
+class _UserPW extends StatelessWidget {
+  final TextEditingController? passwordController;
+
+  const _UserPW({super.key, this.passwordController});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 24.h,
+      child: AuthTextField(
+        onChanged: (_) {},
+        icon: SvgPicture.asset(
+          'asset/icon/password.svg',
+          width: 18.w,
+          height: 18.h,
+        ),
+        controller: passwordController,
+        hintText: '비밀번호',
+      ),
+    );
+  }
+}
+
+class _FindAuthButton extends StatelessWidget {
+  const _FindAuthButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {},
+      child: Text(
+        '아이디 찾기',
+        style: TextStyle(
+          color: primaryFontColor,
+          fontFamily: 'SeoulHangang',
+          fontWeight: FontWeight.w500,
+          letterSpacing: -0.9.sp,
+          fontSize: 12.sp,
+          decoration: TextDecoration.underline,
+          decorationThickness: 1.5.sp,
+        ),
+      ),
     );
   }
 }
