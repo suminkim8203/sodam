@@ -71,10 +71,10 @@ flutter:
 
     - family: SeoulHangang
       fonts:
-        - asset: asset/font/SeoulHangangL.ttf
-        - asset: asset/font/SeoulHangangM.ttf
+        - asset: asset/font/SeoulHangangCL.ttf
+        - asset: asset/font/SeoulHangangCM.ttf
           weight: 500
-        - asset: asset/font/SeoulHangangB.ttf
+        - asset: asset/font/SeoulHangangCB.ttf
           weight: 700
 
   # To add assets to your application, add an assets section, like this:

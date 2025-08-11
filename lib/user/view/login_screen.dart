@@ -29,8 +29,12 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(height: 10.h),
               _UserPW(
                 passwordController: passwordController,
+
               ),
+              SizedBox(height: 10.h),
               _FindAuthButton(),
+              SizedBox(height: 26.h),
+              _StartButton(),
               // _SocialLogin(),
             ],
           ),
@@ -66,7 +70,7 @@ class _Title extends StatelessWidget {
               color: Color(0XFFDABAAB),
               fontFamily: 'SeoulHangang',
               fontWeight: FontWeight.w500,
-              letterSpacing: -0.9.sp,
+              // letterSpacing: -0.9.sp,
               fontSize: 12.sp,
               height: 0.2,
             ),
@@ -110,6 +114,7 @@ class _UserPW extends StatelessWidget {
     return Container(
       height: 24.h,
       child: AuthTextField(
+        obscureText: true,
         onChanged: (_) {},
         icon: SvgPicture.asset(
           'asset/icon/password.svg',
@@ -128,19 +133,86 @@ class _FindAuthButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {},
-      child: Text(
-        '아이디 찾기',
-        style: TextStyle(
-          color: primaryFontColor,
-          fontFamily: 'SeoulHangang',
-          fontWeight: FontWeight.w500,
-          letterSpacing: -0.9.sp,
-          fontSize: 12.sp,
-          decoration: TextDecoration.underline,
-          decorationThickness: 1.5.sp,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        // 아이디 찾기 버튼
+        GestureDetector(
+          onTap: () {
+            print('아이디 찾기 클릭');
+          },
+          child: Text(
+            '아이디 찾기',
+            style: TextStyle(
+              color: primaryFontColor,
+              fontFamily: 'SeoulHangang',
+              fontWeight: FontWeight.w500,
+              // letterSpacing: -0.9.sp,
+              fontSize: 12.sp,
+              // decoration: TextDecoration.underline,
+              decorationThickness: 1.5.sp,
+            ),
+          ),
         ),
+        // SizedBox(width: 6.sp),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4.sp), // 좌우 간격 조정
+          child: Text(
+            '|',
+            style: TextStyle(
+              fontSize: 11.sp,
+              fontWeight: FontWeight.w200,
+            ),
+          ),
+        ),
+
+        // 비밀번호 찾기 버튼
+        GestureDetector(
+          onTap: () {
+            print('비밀번호 찾기 클릭');
+          },
+          child: Text(
+            '비밀번호 찾기',
+            style: TextStyle(
+              color: primaryFontColor,
+              fontFamily: 'SeoulHangang',
+              fontWeight: FontWeight.w500,
+              // letterSpacing: -0.9.sp,
+              fontSize: 11.sp,
+              // decoration: TextDecoration.underline,
+              decorationThickness: 1.5.sp,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StartButton extends StatelessWidget {
+  const _StartButton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: () {
+        print('시작하기 버튼 클릭');
+      },
+      child: Text('시작하기'),
+      style: OutlinedButton.styleFrom(
+        minimumSize: Size(250.w, 42.h),
+        foregroundColor: primaryFontColor,
+        backgroundColor: Color(0xffE9D5CC),
+        side: BorderSide(color: Color(0xffD5C7BC), width: 1),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(5),
+        ),
+        textStyle: TextStyle(
+            fontFamily: 'SeoulHangang',
+            fontWeight: FontWeight.w500,
+            fontSize: 15.sp,
+            // letterSpacing: -0.9.sp
+        )
       ),
     );
   }
