@@ -32,7 +32,7 @@ class AuthTextField extends StatelessWidget {
       obscureText: obscureText,
       enabled: enabled,
       controller: controller,
-      onChanged: onChanged ?? (_){}, // null 이면 빈 함수 실행
+      onChanged: onChanged ?? (_) {}, // null 이면 빈 함수 실행
       style: TextStyle(
         fontFamily: 'SeoulHangang',
         fontWeight: FontWeight.w500,
@@ -60,7 +60,7 @@ class AuthTextField extends StatelessWidget {
           borderSide: BorderSide(color: Color(0xffD5C7BC)),
         ),
         prefixIcon: Padding(
-          padding: const EdgeInsets.only(left: 5.0),
+          padding: const EdgeInsets.only(left: 5.0, right: 5.0),
           child: icon,
           // SvgPicture.asset(
           //   'asset/icon/person.svg',

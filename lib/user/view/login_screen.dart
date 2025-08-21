@@ -3,6 +3,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sodamham/common/color.dart';
 import 'package:sodamham/user/view/component/auth_text_field.dart';
+import 'package:sodamham/user/view/component/primary_button.dart';
+import 'package:sodamham/user/view/component/social_login_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -29,13 +31,13 @@ class _LoginScreenState extends State<LoginScreen> {
               SizedBox(height: 10.h),
               _UserPW(
                 passwordController: passwordController,
-
               ),
               SizedBox(height: 10.h),
               _FindAuthButton(),
               SizedBox(height: 26.h),
               _StartButton(),
-              // _SocialLogin(),
+              SizedBox(height: 110.h),
+              _SocialLogin(),
             ],
           ),
         ),
@@ -178,7 +180,7 @@ class _FindAuthButton extends StatelessWidget {
               fontFamily: 'SeoulHangang',
               fontWeight: FontWeight.w500,
               // letterSpacing: -0.9.sp,
-              fontSize: 11.sp,
+              fontSize: 12.sp,
               // decoration: TextDecoration.underline,
               decorationThickness: 1.5.sp,
             ),
@@ -194,26 +196,31 @@ class _StartButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton(
-      onPressed: () {
-        print('시작하기 버튼 클릭');
-      },
-      child: Text('시작하기'),
-      style: OutlinedButton.styleFrom(
-        minimumSize: Size(250.w, 42.h),
-        foregroundColor: primaryFontColor,
-        backgroundColor: Color(0xffE9D5CC),
-        side: BorderSide(color: Color(0xffD5C7BC), width: 1),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(5),
+    return Column(
+      children: [
+        PrimaryButton(buttonText: '시작하기'),
+        PrimaryButton(buttonText: '회원가입', backgroundColor: Color(0xffEEE9E5))
+      ],
+    );
+  }
+}
+
+class _SocialLogin extends StatelessWidget {
+  const _SocialLogin({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        SocialLoginButton(
+          buttonText: 'Google로 시작하기',
+          icon: SvgPicture.asset('asset/icon/google.svg'),
         ),
-        textStyle: TextStyle(
-            fontFamily: 'SeoulHangang',
-            fontWeight: FontWeight.w500,
-            fontSize: 15.sp,
-            // letterSpacing: -0.9.sp
-        )
-      ),
+        SocialLoginButton(
+          buttonText: 'Kakao로 시작하기',
+          icon: SvgPicture.asset('asset/icon/kakao.svg'),
+        ),
+      ],
     );
   }
 }
