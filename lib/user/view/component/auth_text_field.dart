@@ -37,7 +37,6 @@ class AuthTextField extends StatelessWidget {
         fontFamily: 'SeoulHangang',
         fontWeight: FontWeight.w500,
         fontSize: 16.sp,
-        // letterSpacing: -0.9.sp,
       ),
       textAlignVertical: TextAlignVertical.center,
       decoration: InputDecoration(
