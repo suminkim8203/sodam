@@ -62,7 +62,7 @@ class SignTextField extends StatelessWidget {
 
             // 버튼
             suffixIcon: Padding(
-              padding: EdgeInsets.only(right: 0, bottom: 2.sp),
+              padding: EdgeInsets.only(right: 0, bottom: 3.sp),
               child: isButton
                   ? TextFieldButton(
                       buttonText: buttonText,

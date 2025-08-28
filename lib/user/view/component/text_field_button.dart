@@ -22,8 +22,8 @@ class TextFieldButton extends StatelessWidget {
             horizontal: 8.0,
             vertical: 4.0,
           ),
-          // minimumSize: Size(60.w, 20.h),
-          minimumSize: Size(0, 0),
+          minimumSize: Size(60.w, 20.h),
+          // minimumSize: Size(0, 0),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap, // 터치 영역 축소
           foregroundColor: primaryFontColor,
           backgroundColor: Color(0xffE9D5CC),

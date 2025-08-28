@@ -3,14 +3,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sodamham/common/color.dart';
 import 'package:sodamham/user/view/component/sign_text_field.dart';
 
-class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({super.key});
+class SignUpScreen2 extends StatelessWidget {
+  const SignUpScreen2({super.key});
 
-  @override
-  State<SignUpScreen> createState() => _SignUpScreenState();
-}
-
-class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -21,12 +16,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
             children: [
               _Title(),
               SizedBox(height: 50.h),
-              _EmailVerification(),
+              SignTextField(
+                subTitle: '아이디 *',
+                hintText: '사용하실 아이디를 입력해주세요',
+                isButton: true,
+                buttonText: '중복확인',
+              ),
+              SizedBox(height: 20.h),
+              _PWField(),
             ],
           ),
         ),
       ),
-      backgroundColor: Color(0XFFFBFAF5),
     );
   }
 }
@@ -54,18 +55,11 @@ class _Title extends StatelessWidget {
   }
 }
 
-class _EmailVerification extends StatelessWidget {
-  const _EmailVerification({super.key});
+class _PWField extends StatelessWidget {
+  const _PWField({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        SignTextField(
-          subTitle: '이메일 *',
-          hintText: '이메일 주소를 입력해주세요.',
-        )
-      ],
-    );
+    return const Placeholder();
   }
 }

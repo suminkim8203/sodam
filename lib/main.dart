@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sodamham/common/color.dart';
 import 'package:sodamham/user/view/login_screen.dart';
-import 'package:sodamham/user/view/sign_up_screen.dart';
+import 'package:sodamham/user/view/sign_up_screen_1.dart';
 
 void main() {
   runApp(const MyApp());
