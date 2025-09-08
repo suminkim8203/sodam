@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sodamham/common/color.dart';
 import 'package:sodamham/user/view/login_screen.dart';
 import 'package:sodamham/user/view/sign_up_screen_1.dart';
+import 'package:sodamham/user/view/sign_up_screen_2.dart';
 
 void main() {
   runApp(const MyApp());
@@ -26,7 +27,8 @@ class MyApp extends StatelessWidget {
                     bodyColor: primaryFontColor,
                   )),
           // home: LoginScreen(),
-          home: SignUpScreen(),
+          // home: SignUpScreen(),
+          home: SignUpScreen2(),
         );
       },
     );
