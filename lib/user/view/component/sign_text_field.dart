@@ -55,42 +55,55 @@ class SignTextField extends StatelessWidget {
           ),
           textAlignVertical: TextAlignVertical.center,
           decoration: InputDecoration(
-            isCollapsed: true,
-            contentPadding: EdgeInsets.only(top: 4.0.sp, left: 5.0.w),
-            hintText: hintText,
-            errorText: errorText,
+              isCollapsed: true,
+              contentPadding: EdgeInsets.only(top: 4.0.sp, left: 5.0.w),
+              hintText: hintText,
+              errorText: errorText,
 
-            // 버튼
-            suffixIcon: Padding(
-              padding: EdgeInsets.only(right: 0, bottom: 3.sp),
-              child: isButton
-                  ? TextFieldButton(
-                      buttonText: buttonText,
-                      onPressed: () {
-                        // 버튼 클릭 시 동작 부분
-                      },
-                    )
-                  : null,
-            ),
-            suffixIconConstraints: BoxConstraints(
-              minHeight: 24.h,
-            ),
+              // 버튼
+              suffixIcon: Padding(
+                padding: EdgeInsets.only(right: 0, bottom: 3.sp),
+                child: isButton
+                    ? TextFieldButton(
+                        buttonText: buttonText,
+                        onPressed: () {
+                          // 버튼 클릭 시 동작 부분
+                        },
+                      )
+                    : null,
+              ),
+              suffixIconConstraints: BoxConstraints(
+                minHeight: 24.h,
+              ),
 
-            // 힌트 텍스트
-            hintStyle: TextStyle(
-              color: Color(0XFFB1AEAE),
-              fontFamily: 'SeoulHangang',
-              fontWeight: FontWeight.w500,
-              fontSize: 14.sp,
-              // letterSpacing: -0.9.sp,
-            ),
-            enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: Color(0xffD5C7BC)),
-            ),
-            focusedBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: Color(0xffD5C7BC)),
-            ),
-          ),
+              // 힌트 텍스트
+              hintStyle: TextStyle(
+                color: Color(0XFFB1AEAE),
+                fontFamily: 'SeoulHangang',
+                fontWeight: FontWeight.w500,
+                fontSize: 14.sp,
+                // letterSpacing: -0.9.sp,
+              ),
+
+              // 에러 텍스트
+              errorStyle: TextStyle(
+                color: Color(0XFFDD838F),
+                fontFamily: 'SeoulHangang',
+                fontWeight: FontWeight.w500,
+                fontSize: 13.sp,
+              ),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Color(0xffD5C7BC)),
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Color(0xffD5C7BC)),
+              ),
+              errorBorder: UnderlineInputBorder(
+                borderSide: BorderSide(
+                  color: Color(0XFFDD838F),
+                  width: 1.5.sp,
+                ),
+              )),
         ),
       ],
     );

@@ -154,7 +154,9 @@ class _SignUpButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PrimaryButton(buttonText: '가입하기');
-    // 추후 onPressed로 가입 로직 작성
+    return PrimaryButton(
+      buttonText: '가입하기',
+      onPressed: () {},
+    );
   }
 }
