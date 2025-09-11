@@ -4,8 +4,8 @@ import 'package:sodamham/common/color.dart';
 import 'package:sodamham/user/view/component/primary_button.dart';
 import 'package:sodamham/user/view/component/sign_text_field.dart';
 
-class FindUserAuthId extends StatelessWidget {
-  const FindUserAuthId({super.key});
+class FindUserAuthIdScreen extends StatelessWidget {
+  const FindUserAuthIdScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

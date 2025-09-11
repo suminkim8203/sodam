@@ -14,6 +14,7 @@ class SignTextField extends StatelessWidget {
 
   final bool isButton;
   final String buttonText;
+  final VoidCallback? onPressed;
 
   const SignTextField({
     super.key,
@@ -27,6 +28,7 @@ class SignTextField extends StatelessWidget {
     this.onChanged,
     this.isButton = false,
     this.buttonText = '',
+    this.onPressed,
   });
 
   @override
@@ -66,9 +68,7 @@ class SignTextField extends StatelessWidget {
                 child: isButton
                     ? TextFieldButton(
                         buttonText: buttonText,
-                        onPressed: () {
-                          // 버튼 클릭 시 동작 부분
-                        },
+                        onPressed: onPressed ?? () {},
                       )
                     : null,
               ),

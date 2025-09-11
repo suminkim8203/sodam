@@ -4,8 +4,8 @@ import 'package:sodamham/common/color.dart';
 import 'package:sodamham/user/view/component/primary_button.dart';
 import 'package:sodamham/user/view/component/sign_text_field.dart';
 
-class FindUserAuthPw extends StatelessWidget {
-  const FindUserAuthPw({super.key});
+class FindUserAuthPwScreen extends StatelessWidget {
+  const FindUserAuthPwScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +22,7 @@ class FindUserAuthPw extends StatelessWidget {
                 controller: idFindController,
                 subTitle: '아이디 *',
                 hintText: '비밀번호 찾을 아이디를 입력해주세요.',
-                errorText: isIdError ? '*존재하지 않는 아이디입니다.' : null,
+                // errorText: isIdError ? '*존재하지 않는 아이디입니다.' : null,
               ),
               SizedBox(height: 100.h),
               PrimaryButton(buttonText: '확인')
@@ -54,22 +54,6 @@ class _Title extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _FindIdField extends StatelessWidget {
-  const _FindIdField({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    bool isIdError;
-    // isIdError = api(컨트롤러 텍스트);
-    isIdError = false;
-
-    final TextEditingController? idTextController = TextEditingController();
-    return Column(
-      children: [],
     );
   }
 }

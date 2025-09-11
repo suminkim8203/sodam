@@ -6,14 +6,9 @@ import 'package:sodamham/user/view/component/primary_button.dart';
 import 'package:sodamham/user/view/component/pw_text_field.dart';
 import 'package:sodamham/user/view/component/sign_text_field.dart';
 
-class SignUpScreen2 extends StatefulWidget {
-  const SignUpScreen2({super.key});
+class ResetPwScreen extends StatelessWidget {
+  const ResetPwScreen({super.key});
 
-  @override
-  State<SignUpScreen2> createState() => _SignUpScreen2State();
-}
-
-class _SignUpScreen2State extends State<SignUpScreen2> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -24,16 +19,9 @@ class _SignUpScreen2State extends State<SignUpScreen2> {
             children: [
               _Title(),
               SizedBox(height: 50.h),
-              SignTextField(
-                subTitle: '아이디 *',
-                hintText: '사용하실 아이디를 입력해주세요',
-                isButton: true,
-                buttonText: '중복확인',
-              ),
-              SizedBox(height: 36.h),
               PwTextField(),
               SizedBox(height: 100.h),
-              _SignUpButton(),
+              PrimaryButton(buttonText: '확인')
             ],
           ),
         ),
@@ -53,7 +41,7 @@ class _Title extends StatelessWidget {
       children: [
         SizedBox(height: 180.h),
         Text(
-          '새롭게 함께하기',
+          '비밀번호 재설정',
           style: TextStyle(
             color: primaryFontColor,
             fontFamily: 'SeoulHangang',
@@ -62,18 +50,6 @@ class _Title extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _SignUpButton extends StatelessWidget {
-  const _SignUpButton({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return PrimaryButton(
-      buttonText: '가입하기',
-      onPressed: () {},
     );
   }
 }
