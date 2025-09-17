@@ -20,7 +20,7 @@ class PrimaryButton extends StatelessWidget {
       onPressed: onPressed ?? () {},
       child: Text(buttonText),
       style: OutlinedButton.styleFrom(
-          minimumSize: Size(250.w, 42.h),
+          fixedSize: Size(260.w, 42.h),
           foregroundColor: primaryFontColor,
           backgroundColor: backgroundColor,
           side: BorderSide(color: Color(0xffD5C7BC), width: 1),

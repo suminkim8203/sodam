@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sodamham/common/color.dart';
+import 'package:sodamham/common/component/user_default_layout.dart';
 import 'package:sodamham/user/view/component/primary_button.dart';
 import 'package:sodamham/user/view/component/sign_text_field.dart';
 
@@ -10,27 +11,24 @@ class FindUserAuthPwScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextEditingController? idFindController = TextEditingController();
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 50.0),
-          child: Column(
-            children: [
-              _Title(),
-              SizedBox(height: 50.h),
-              SignTextField(
-                controller: idFindController,
-                subTitle: '아이디 *',
-                hintText: '비밀번호 찾을 아이디를 입력해주세요.',
-                // errorText: isIdError ? '*존재하지 않는 아이디입니다.' : null,
-              ),
-              SizedBox(height: 100.h),
-              PrimaryButton(buttonText: '확인')
-            ],
-          ),
+    return UserDefaultLayout(
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 50.0),
+        child: Column(
+          children: [
+            _Title(),
+            SizedBox(height: 50.h),
+            SignTextField(
+              controller: idFindController,
+              subTitle: '아이디 *',
+              hintText: '비밀번호 찾을 아이디를 입력해주세요.',
+              // errorText: isIdError ? '*존재하지 않는 아이디입니다.' : null,
+            ),
+            SizedBox(height: 100.h),
+            PrimaryButton(buttonText: '확인')
+          ],
         ),
       ),
-      backgroundColor: Color(0XFFFBFAF5),
     );
   }
 }

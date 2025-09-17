@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sodamham/common/color.dart';
+import 'package:sodamham/common/component/user_default_layout.dart';
 import 'package:sodamham/user/view/component/primary_button.dart';
 import 'package:sodamham/user/view/component/sign_text_field.dart';
 import 'package:sodamham/user/view/sign_up_screen_2.dart';
@@ -15,22 +16,19 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 50.0),
-          child: Column(
-            children: [
-              _Title(),
-              SizedBox(height: 50.h),
-              _EmailVerification(),
-              SizedBox(height: 100.h),
-              _NextButton(),
-            ],
-          ),
+    return UserDefaultLayout(
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 50.0),
+        child: Column(
+          children: [
+            _Title(),
+            SizedBox(height: 50.h),
+            _EmailVerification(),
+            SizedBox(height: 100.h),
+            _NextButton(),
+          ],
         ),
       ),
-      backgroundColor: Color(0XFFFBFAF5),
     );
   }
 }

@@ -5,28 +5,27 @@ import 'package:sodamham/common/component/user_default_layout.dart';
 import 'package:sodamham/user/view/component/primary_button.dart';
 import 'package:sodamham/user/view/component/sign_text_field.dart';
 
-class FindUserAuthIdScreen extends StatelessWidget {
-  const FindUserAuthIdScreen({super.key});
+class JoinGroupScreen extends StatelessWidget {
+  const JoinGroupScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return UserDefaultLayout(
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 50.0),
-        child: Column(
-          children: [
-            _Title(),
-            SizedBox(height: 50.h),
-            SignTextField(
-              subTitle: '이메일 *',
-              hintText: '가입시 사용한 이메일을 입력해주세요.',
-            ),
-            SizedBox(height: 100.h),
-            PrimaryButton(buttonText: '확인')
-          ],
-        ),
+        body: Padding(
+      padding: EdgeInsets.symmetric(horizontal: 50.w),
+      child: Column(
+        children: [
+          _Title(),
+          SizedBox(height: 50.h),
+          SignTextField(
+            subTitle: 'URL 주소 *',
+            hintText: '모임 URL 주소를 입력해주세요.',
+          ),
+          SizedBox(height: 100.h),
+          PrimaryButton(buttonText: '참가하기')
+        ],
       ),
-    );
+    ));
   }
 }
 
@@ -40,7 +39,7 @@ class _Title extends StatelessWidget {
       children: [
         SizedBox(height: 180.h),
         Text(
-          '아이디 찾기',
+          '모임에 참가하기',
           style: TextStyle(
             color: primaryFontColor,
             fontFamily: 'SeoulHangang',

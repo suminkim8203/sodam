@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sodamham/common/color.dart';
+import 'package:sodamham/common/component/user_default_layout.dart';
 import 'package:sodamham/user/view/component/auth_text_field.dart';
 import 'package:sodamham/user/view/component/primary_button.dart';
 import 'package:sodamham/user/view/component/social_login_button.dart';
@@ -19,30 +20,27 @@ class _LoginScreenState extends State<LoginScreen> {
     final usernameController = TextEditingController();
     final passwordController = TextEditingController();
 
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 50.0),
-          child: Column(
-            children: [
-              _Title(),
-              SizedBox(height: 53.h),
-              _Username(usernameController: usernameController),
-              SizedBox(height: 10.h),
-              _UserPW(
-                passwordController: passwordController,
-              ),
-              SizedBox(height: 10.h),
-              _FindAuthButton(),
-              SizedBox(height: 26.h),
-              _StartButton(),
-              SizedBox(height: 110.h),
-              _SocialLogin(),
-            ],
-          ),
+    return UserDefaultLayout(
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 50.0),
+        child: Column(
+          children: [
+            _Title(),
+            SizedBox(height: 53.h),
+            _Username(usernameController: usernameController),
+            SizedBox(height: 10.h),
+            _UserPW(
+              passwordController: passwordController,
+            ),
+            SizedBox(height: 10.h),
+            _FindAuthButton(),
+            SizedBox(height: 26.h),
+            _StartButton(),
+            SizedBox(height: 110.h),
+            _SocialLogin(),
+          ],
         ),
       ),
-      backgroundColor: Color(0XFFFBFAF5),
     );
   }
 }
@@ -199,6 +197,7 @@ class _StartButton extends StatelessWidget {
     return Column(
       children: [
         PrimaryButton(buttonText: '시작하기'),
+        SizedBox(height: 10.h),
         PrimaryButton(buttonText: '회원가입', backgroundColor: Color(0xffEEE9E5))
       ],
     );
@@ -216,6 +215,7 @@ class _SocialLogin extends StatelessWidget {
           buttonText: 'Google로 시작하기',
           icon: SvgPicture.asset('asset/icon/google.svg'),
         ),
+        SizedBox(height: 10.h),
         SocialLoginButton(
           buttonText: 'Kakao로 시작하기',
           icon: SvgPicture.asset('asset/icon/kakao.svg'),

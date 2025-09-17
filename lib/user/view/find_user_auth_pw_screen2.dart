@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sodamham/common/color.dart';
+import 'package:sodamham/common/component/user_default_layout.dart';
 import 'package:sodamham/user/view/component/primary_button.dart';
 import 'package:sodamham/user/view/component/sign_text_field.dart';
 import 'package:sodamham/user/view/reset_pw_screen.dart';
@@ -12,55 +13,52 @@ class FindUserAuthPwScreen2 extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final TextEditingController? idFindController = TextEditingController();
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 50.0),
-          child: Column(
-            children: [
-              _Title(),
-              SizedBox(height: 50.h),
-              SignTextField(
-                controller: idFindController,
-                subTitle: '이메일 *',
-                hintText: '사용한 이메일을 입력해주세요.',
-                isButton: true,
-                buttonText: '전송',
-                onPressed: () {
-                  showCustomToast(context, '이메일이 전송되었습니다.\n인증번호를 확인해주세요.');
-                },
-              ),
-              SizedBox(height: 20.h),
-              SignTextField(
-                controller: idFindController,
-                subTitle: '인증번호 *',
-                hintText: '인증번호를 입력해주세요',
-              ),
-              SizedBox(height: 100.h),
+    return UserDefaultLayout(
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 50.0),
+        child: Column(
+          children: [
+            _Title(),
+            SizedBox(height: 50.h),
+            SignTextField(
+              controller: idFindController,
+              subTitle: '이메일 *',
+              hintText: '사용한 이메일을 입력해주세요.',
+              isButton: true,
+              buttonText: '전송',
+              onPressed: () {
+                showCustomToast(context, '이메일이 전송되었습니다.\n인증번호를 확인해주세요.');
+              },
+            ),
+            SizedBox(height: 20.h),
+            SignTextField(
+              controller: idFindController,
+              subTitle: '인증번호 *',
+              hintText: '인증번호를 입력해주세요',
+            ),
+            SizedBox(height: 100.h),
 
-              // 확인 버튼
-              PrimaryButton(
-                buttonText: '확인',
-                onPressed: () {
-                  // 토스트 띄우기
-                  showCustomToast(context, '인증되었습니다.');
+            // 확인 버튼
+            PrimaryButton(
+              buttonText: '확인',
+              onPressed: () {
+                // 토스트 띄우기
+                showCustomToast(context, '인증되었습니다.');
 
-                  // 2초 뒤에 다음 화면으로 이동
-                  Future.delayed(const Duration(seconds: 2), () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ResetPwScreen(), // 비밀번호 재설정 화면
-                      ),
-                    );
-                  });
-                },
-              ),
-            ],
-          ),
+                // 2초 뒤에 다음 화면으로 이동
+                Future.delayed(const Duration(seconds: 2), () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const ResetPwScreen(), // 비밀번호 재설정 화면
+                    ),
+                  );
+                });
+              },
+            ),
+          ],
         ),
       ),
-      backgroundColor: Color(0XFFFBFAF5),
     );
   }
 }
