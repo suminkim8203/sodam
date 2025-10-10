@@ -4,6 +4,7 @@ import 'package:sodamham/common/color.dart';
 import 'package:sodamham/common/component/user_default_layout.dart';
 import 'package:sodamham/user/view/component/primary_button.dart';
 import 'package:sodamham/user/view/component/sign_text_field.dart';
+import 'package:sodamham/user/view/component/sub_title.dart';
 import 'package:sodamham/user/view/sign_up_screen_2.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -21,7 +22,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 50.0),
         child: Column(
           children: [
-            _Title(),
+            SubTitle(text: '새롭게 함께하기'),
             SizedBox(height: 50.h),
             _EmailVerification(),
             SizedBox(height: 100.h),
@@ -29,29 +30,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _Title extends StatelessWidget {
-  const _Title({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SizedBox(height: 180.h),
-        Text(
-          '새롭게 함께하기',
-          style: TextStyle(
-            color: primaryFontColor,
-            fontFamily: 'SeoulHangang',
-            fontWeight: FontWeight.w500,
-            fontSize: 24.sp,
-          ),
-        ),
-      ],
     );
   }
 }

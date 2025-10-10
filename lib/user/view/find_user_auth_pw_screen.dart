@@ -4,6 +4,7 @@ import 'package:sodamham/common/color.dart';
 import 'package:sodamham/common/component/user_default_layout.dart';
 import 'package:sodamham/user/view/component/primary_button.dart';
 import 'package:sodamham/user/view/component/sign_text_field.dart';
+import 'package:sodamham/user/view/component/sub_title.dart';
 
 class FindUserAuthPwScreen extends StatelessWidget {
   const FindUserAuthPwScreen({super.key});
@@ -16,7 +17,7 @@ class FindUserAuthPwScreen extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 50.0),
         child: Column(
           children: [
-            _Title(),
+            SubTitle(text: '비밀번호 찾기'),
             SizedBox(height: 50.h),
             SignTextField(
               controller: idFindController,
@@ -29,29 +30,6 @@ class FindUserAuthPwScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _Title extends StatelessWidget {
-  const _Title({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SizedBox(height: 180.h),
-        Text(
-          '비밀번호 찾기',
-          style: TextStyle(
-            color: primaryFontColor,
-            fontFamily: 'SeoulHangang',
-            fontWeight: FontWeight.w500,
-            fontSize: 24.sp,
-          ),
-        ),
-      ],
     );
   }
 }
