@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_switch/flutter_switch.dart';
 import 'package:sodamham/common/color.dart';
+import 'package:sodamham/user/view/component/post_item.dart';
+import 'package:sodamham/user/view/create_new_group_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,59 +18,92 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        // 타이틀을 왼쪽 정렬
-        centerTitle: false,
-
-        // 타이틀 부분
-        title: Row(
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            Text(
-              '소담함',
-              style: TextStyle(
-                fontFamily: 'HambakSnow',
-                color: primaryFontColor,
-                fontSize: 24.sp,
-              ),
-            ),
-            Text(
-              ';편안함을 담아 나누다',
-              style: TextStyle(
-                color: Color(0XFFDABAAB),
-                fontFamily: 'SeoulHangang',
-                fontWeight: FontWeight.w500,
-                fontSize: 8.sp,
-              ),
-            ),
-          ],
-        ),
-
-        // 오른쪽 아이콘들
-        actions: [
-          Row(
+        // AppBar의 좌우 패딩을 20.w로 설정
+        automaticallyImplyLeading: false,
+        titleSpacing: 0,
+        title: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20.w),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              IconButton(
-                icon: Icon(Icons.add, color: primaryFontColor),
-                onPressed: () {
-                  // 추가 버튼 동작
-                },
+              // 제목
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    '소담함',
+                    style: TextStyle(
+                      fontFamily: 'HambakSnow',
+                      color: primaryFontColor,
+                      fontSize: 24.sp,
+                    ),
+                  ),
+                  Text(
+                    ';편안함을 담아 나누다',
+                    style: TextStyle(
+                      color: Color(0XFFDABAAB),
+                      fontFamily: 'SeoulHangang',
+                      fontWeight: FontWeight.w500,
+                      fontSize: 8.sp,
+                    ),
+                  ),
+                ],
               ),
-              IconButton(
-                icon: Icon(Icons.search, color: primaryFontColor),
-                onPressed: () {
-                  // 검색 버튼 동작
-                },
-              ),
-              IconButton(
-                icon: Icon(Icons.settings, color: primaryFontColor),
-                onPressed: () {
-                  // 설정 버튼 동작
-                },
+              // 아이콘 버튼들
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: 2.w,
+                children: [
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () {
+                        // 추가 버튼 동작
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => CreateNewGroupScreen()));
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Icon(Icons.add, color: primaryFontColor),
+                      ),
+                    ),
+                  ),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () {
+                        // 검색 버튼 동작
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Icon(Icons.search, color: primaryFontColor),
+                      ),
+                    ),
+                  ),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () {
+                        // 설정 버튼 동작
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Icon(Icons.settings, color: primaryFontColor),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
 
         // AppBar 배경색
         backgroundColor: Color(0xffFCFCFC),
@@ -77,14 +114,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
       body: SingleChildScrollView(
         child: SafeArea(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 22.w),
-            child: Column(
-              children: [
-                SizedBox(height: 18.h),
-                _MyGroup(),
-              ],
-            ),
+          child: Column(
+            children: [
+              SizedBox(height: 18.h),
+              _MyGroup(),
+            ],
           ),
         ),
       ),
@@ -94,47 +128,88 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _MyGroup extends StatelessWidget {
+class _MyGroup extends StatefulWidget {
   const _MyGroup({super.key});
+
+  @override
+  State<_MyGroup> createState() => _MyGroupState();
+}
+
+class _MyGroupState extends State<_MyGroup> {
+  bool isToggled = false;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('나의 모임',
-                style: TextStyle(
-                  color: primaryFontColor,
-                  fontFamily: 'SeoulHangang',
-                  fontSize: 15.sp,
-                )),
-            Row(
-              children: [
-                Text(
-                  '슬라이드형',
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 22.w),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('나의 모임',
                   style: TextStyle(
-                    color: Color(0xffB1AEAE),
+                    color: primaryFontColor,
                     fontFamily: 'SeoulHangang',
-                    fontSize: 12.sp,
+                    fontSize: 15.sp,
+                  )),
+              Row(
+                children: [
+                  Text(
+                    isToggled ? '카드형' : '슬라이드형',
+                    style: TextStyle(
+                      color: Color(0xffB1AEAE),
+                      fontFamily: 'SeoulHangang',
+                      fontSize: 12.sp,
+                    ),
                   ),
-                ),
-                IconButton(
-                  onPressed: () {},
-                  icon: Icon(
-                    Icons.toggle_off,
-                    size: 22.sp,
-                  ),
-                )
-              ],
-            )
-          ],
+                  SizedBox(width: 6.w),
+                  FlutterSwitch(
+                      width: 24.w,
+                      height: 16.h,
+                      toggleSize: 8.0.sp,
+                      padding: 1.1.sp,
+                      activeColor: primaryFontColor,
+                      inactiveColor: Colors.transparent,
+                      inactiveToggleColor: primaryFontColor,
+                      switchBorder:
+                          BoxBorder.all(color: primaryFontColor, width: 2.5.sp),
+                      duration: const Duration(milliseconds: 210),
+                      value: isToggled,
+                      onToggle: (value) {
+                        setState(() {
+                          isToggled = value;
+                        });
+                      })
+                ],
+              ),
+            ],
+          ),
         ),
+        SizedBox(height: 5.h),
+        isToggled ? CardScreen() : SlideScreen()
+      ],
+    );
+  }
+}
+
+// 슬라이드형
+class SlideScreen extends StatefulWidget {
+  const SlideScreen({super.key});
+
+  @override
+  State<SlideScreen> createState() => _SlideScreenState();
+}
+
+class _SlideScreenState extends State<SlideScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
         SizedBox(
           height: 85.h,
           child: ListView.separated(
-            padding: EdgeInsets.symmetric(horizontal: 3.w),
+            padding: EdgeInsets.symmetric(horizontal: 25.w),
             primary: false,
             shrinkWrap: true,
             scrollDirection: Axis.horizontal,
@@ -177,8 +252,25 @@ class _MyGroup extends StatelessWidget {
               width: 20.w,
             ),
           ),
-        )
+        ),
+        SizedBox(height: 35.h),
+        PostItem(),
       ],
     );
+  }
+}
+
+// 카드형
+class CardScreen extends StatefulWidget {
+  const CardScreen({super.key});
+
+  @override
+  State<CardScreen> createState() => _CardScreenState();
+}
+
+class _CardScreenState extends State<CardScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return const Placeholder();
   }
 }
