@@ -418,13 +418,14 @@ class _SlideScreen extends StatefulWidget {
 
 class _SlideScreenState extends _SlidingHeaderState<_SlideScreen> {
   @override
-  double get headerHeight => 18.h + 40.h + 5.h + 85.h;
+  double get headerHeight => 18.h + 40.h + 5.h + 10.h + 85.h;
 
   @override
   Widget buildScrollBody(BuildContext context, ScrollController controller) {
     return ListView.separated(
       controller: controller,
-      padding: EdgeInsets.only(top: headerHeight + 10.h, bottom: 30.h),
+      padding: EdgeInsets.only(
+          top: headerHeight + 25.h, bottom: 30.h), // 첫번째 postitem 상단 여백
       physics: const BouncingScrollPhysics(),
       itemBuilder: (BuildContext context, int index) {
         return PostItem();
@@ -453,6 +454,7 @@ class _SlideScreenState extends _SlidingHeaderState<_SlideScreen> {
         ),
         SizedBox(height: 5.h),
         const _SlideHeader(),
+        SizedBox(height: 10.h),
       ],
     );
   }
