@@ -18,7 +18,12 @@ class _PostItemListState extends State<PostItemList> {
 }
 
 class PostItem extends StatelessWidget {
-  const PostItem({super.key});
+  const PostItem({
+    super.key,
+    required this.imagePath,
+  });
+
+  final String imagePath;
 
   @override
   Widget build(BuildContext context) {
@@ -30,8 +35,14 @@ class PostItem extends StatelessWidget {
           width: double.infinity,
           height: 330.h,
           decoration: BoxDecoration(
-              color: Colors.amber,
-              border: Border.all(color: Color(0xffFCFCFC), width: 1.sp)),
+            color: const Color(0xffF6F2EE), // Fallback color
+            border: Border.all(color: const Color(0xffFCFCFC), width: 1.sp),
+          ),
+          clipBehavior: Clip.hardEdge,
+          child: Image.asset(
+            imagePath,
+            fit: BoxFit.cover,
+          ),
         ),
       ],
     );

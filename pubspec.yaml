@@ -65,6 +65,7 @@ flutter:
   assets:
     #    - asset/img/
     - asset/icon/
+    - asset/image/
 
   fonts:
     - family: HambakSnow
