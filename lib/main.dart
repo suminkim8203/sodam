@@ -5,6 +5,7 @@ import 'package:sodamham/user/view/create_new_group_screen.dart';
 import 'package:sodamham/user/view/find_user_auth_id_screen.dart';
 import 'package:sodamham/user/view/find_user_auth_pw_screen.dart';
 import 'package:sodamham/user/view/find_user_auth_pw_screen2.dart';
+import 'package:sodamham/user/view/group_screen.dart';
 import 'package:sodamham/user/view/home_screen.dart';
 import 'package:sodamham/user/view/join_group_screen.dart';
 import 'package:sodamham/user/view/login_screen.dart';
@@ -41,7 +42,8 @@ class MyApp extends StatelessWidget {
           // home: FindUserAuthPwScreen2(),
           // home: StartGroupScreen(),
           // home: CreateNewGroupScreen(),
-          home: HomeScreen(),
+          // home: HomeScreen(),
+          home: GroupScreen(),
         );
       },
     );

@@ -147,7 +147,19 @@ class _MyGroupState extends State<_MyGroup> {
   void _handleToggle(bool value) {
     setState(() {
       isToggled = value;
+      // 토글 시 스크롤 상태 초기화 (토스트 다시 보이기)
+      _hideNotifications = false;
     });
+  }
+
+  bool _hideNotifications = false;
+
+  void _handleScrollToTopChange(bool isVisible) {
+    if (_hideNotifications != isVisible) {
+      setState(() {
+        _hideNotifications = isVisible;
+      });
+    }
   }
 
   @override
@@ -161,10 +173,12 @@ class _MyGroupState extends State<_MyGroup> {
                   ? _CardScreen(
                       isToggled: isToggled,
                       onToggle: _handleToggle,
+                      onScrollToTopChange: _handleScrollToTopChange,
                     )
                   : _SlideScreen(
                       isToggled: isToggled,
                       onToggle: _handleToggle,
+                      onScrollToTopChange: _handleScrollToTopChange,
                     ),
             ),
           ],
@@ -196,43 +210,42 @@ class _MyGroupState extends State<_MyGroup> {
       const backLeft = 32.0; // 2순위 Left
 
       if (i == 0) {
-        // 1순위 (Top): 드래그 중인 녀석
-        // 얘는 Dismissible의 child로서 자체적으로 이동하므로 여기서는 고정 위치 반환
-        bottom = topBottom.h;
-        left = topLeft.w;
+        // 1순위 (맨 위)
+        bottom = _hideNotifications ? -100.h : 32.h; // 숨김 처리 로직 추가
+        left = 25.w;
       } else if (i == 1) {
-        // 2순위: 1순위가 지워질 때(progress 0->1) 1순위 자리로 이동
-        // 1순위 자리(Target): (32.h, 25.w)
-        // 2순위 자리(Start): (25.h, 32.w)
-
-        // 보간 (Interpolation)
-        bottom = (backBottom + (topBottom - backBottom) * _dismissProgress).h;
+        // 2순위
+        // 숨김 처리 시 2순위도 같이 내려감
+        double targetBottom =
+            (backBottom + (topBottom - backBottom) * _dismissProgress).h;
+        bottom = _hideNotifications ? -100.h : targetBottom;
         left = (backLeft + (topLeft - backLeft) * _dismissProgress).w;
       } else {
-        // 3순위: 1순위가 지워질 때 투명도 0 -> 1 (위치는 2순위 자리 그대로)
-        bottom = backBottom.h;
+        // 3순위 (숨김 시 같이 이동)
+        bottom = _hideNotifications ? -100.h : backBottom.h;
         left = backLeft.w;
-        opacity = _dismissProgress; // 진행률에 따라 서서히 등장
+        opacity = _dismissProgress;
       }
 
       // 데이터가 1개만 남았을 때 처리
       if (_turnNotificationSamples.length == 1 && i == 0) {
-        bottom = 25.h;
+        bottom = _hideNotifications ? -100.h : 25.h;
         left = 25.w;
       }
-      // 만약 전체 개수가 2개일 때, 2순위 아이템(i=1)의 목표 위치 수정
-      // (1순위가 지워지면 얘는 '1개 남은 상태'의 1순위가 됨 -> (25, 25))
+
+      // 2개일 때 2순위 처리
       if (i == 1 && _turnNotificationSamples.length == 2) {
         double targetBottom = 25.0;
-        double targetLeft = 25.0;
-
-        bottom =
-            (backBottom + (targetBottom - backBottom) * _dismissProgress).h;
-        left = (backLeft + (targetLeft - backLeft) * _dismissProgress).w;
+        // ... 기존 보간 로직 ...
+        bottom = _hideNotifications
+            ? -100.h
+            : (backBottom + (targetBottom - backBottom) * _dismissProgress).h;
       }
 
       widgets.add(
-        Positioned(
+        AnimatedPositioned(
+          duration: const Duration(milliseconds: 500), // 부드러운 이동 (스르륵)
+          curve: Curves.fastOutSlowIn, // 오버슈트 없이 부드럽게 감속
           bottom: bottom,
           left: left,
           child: AnimatedOpacity(
@@ -325,10 +338,12 @@ class _SlideScreen extends StatefulWidget {
     super.key,
     required this.isToggled,
     required this.onToggle,
+    this.onScrollToTopChange,
   });
 
   final bool isToggled;
   final ValueChanged<bool> onToggle;
+  final ValueChanged<bool>? onScrollToTopChange;
 
   @override
   State<_SlideScreen> createState() => _SlideScreenState();
@@ -357,10 +372,12 @@ class _SlideScreenState extends State<_SlideScreen> {
       setState(() {
         _showScrollToTop = true;
       });
+      widget.onScrollToTopChange?.call(true);
     } else if (_scrollController.offset <= 200 && _showScrollToTop) {
       setState(() {
         _showScrollToTop = false;
       });
+      widget.onScrollToTopChange?.call(false);
     }
   }
 
@@ -380,47 +397,34 @@ class _SlideScreenState extends State<_SlideScreen> {
           controller: _scrollController,
           physics: const BouncingScrollPhysics(),
           slivers: [
-            SliverAppBar(
-              backgroundColor: const Color(0xffFCFCFC),
-              scrolledUnderElevation: 0,
-              pinned: true, // Toolbar 고정을 위해 true
-              elevation: 0,
-              toolbarHeight: 58.h + 5.h, // Toolbar(58) + Gap(5) 가 보이도록 설정
-              collapsedHeight: 58.h + 5.h,
-              expandedHeight:
-                  58.h + 5.h + 85.h + 16.h, // Toolbar+Gap+Header+Gap
-              flexibleSpace: FlexibleSpaceBar(
-                collapseMode: CollapseMode.pin, // Parallax 방지 (한 몸처럼 고정되어 짤림)
-                background: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    SizedBox(height: 18.h), // Safe Area Top Padding
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 22.w),
-                      child: SizedBox(
-                        height: 40.h,
-                        child: _MyGroupToolbar(
-                          isToggled: widget.isToggled,
-                          onToggle: widget.onToggle,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 5.h), // Toolbar + Gap
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 22.w),
-                      child: const _SlideHeader(),
-                    ),
-                    SizedBox(height: 16.h),
-                  ],
-                ),
-              ),
-            ),
-            // Header와 List 사이에 RefreshControl 배치
-            CupertinoSliverRefreshControl(
+            // 최상단에 RefreshControl 배치 (커스텀 Sodam Dots 적용)
+            _SodamRefreshControl(
               onRefresh: () async {
-                // 리로드 로직 시뮬레이션
                 await Future.delayed(const Duration(seconds: 1));
               },
+            ),
+            // SliverAppBar 제거 및 SliverToBoxAdapter로 교체 (카드형과 동일 구조)
+            SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: 18.h), // 상단 여백 (CardScreen과 통일)
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 22.w),
+                    child: SizedBox(
+                      height: 40.h,
+                      child: _MyGroupToolbar(
+                        isToggled: widget.isToggled,
+                        onToggle: widget.onToggle,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 5.h), // Toolbar + Gap
+                  // Padding 제거 (개방형 가로 스크롤)
+                  const _SlideHeader(),
+                  SizedBox(height: 16.h), // Header + Gap
+                ],
+              ),
             ),
             SliverPadding(
               padding: EdgeInsets.only(top: 25.h, bottom: 30.h),
@@ -453,18 +457,18 @@ class _SlideScreenState extends State<_SlideScreen> {
             child: GestureDetector(
               onTap: _scrollToTop,
               child: Container(
-                width: 48.w,
-                height: 48.w,
+                width: 44.w,
+                height: 44.w,
                 decoration: BoxDecoration(
-                  color: const Color(0xffFCFCFC),
+                  color: const Color(0xffFCFCFC).withOpacity(0.8), // 반투명 흰색 배경
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: const Color(0xffD5C7BC),
-                    width: 1,
+                    color: primaryFontColor, // 갈색 테두리
+                    width: 1.0,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withOpacity(0.1),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -472,7 +476,7 @@ class _SlideScreenState extends State<_SlideScreen> {
                 ),
                 child: Icon(
                   Icons.keyboard_arrow_up,
-                  color: const Color(0xff8B7E74),
+                  color: primaryFontColor, // 갈색 아이콘
                   size: 28.sp,
                 ),
               ),
@@ -493,37 +497,47 @@ class _SlideHeader extends StatelessWidget {
     return SizedBox(
       height: 85.h,
       child: ListView.separated(
-        padding: EdgeInsets.symmetric(horizontal: 0.w),
+        padding: EdgeInsets.zero, // 기본 패딩 제거
         scrollDirection: Axis.horizontal,
         itemCount: _groupSamples.length, // 실제 데이터 개수 (Safety)
         itemBuilder: (BuildContext context, int index) {
           final group = _groupSamples[index];
-          return SizedBox(
-            width: 58.w,
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 58.h,
-                  width: 58.w,
-                  child: _GroupImage(imageAsset: group.imageAsset),
+          // 첫 번째 아이템 왼쪽에만 여백(22.w) 추가하여 시작점 맞춤
+          // 렌더링 시 Row로 감싸서 처리
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (index == 0) SizedBox(width: 26.w),
+              SizedBox(
+                width: 58.w,
+                child: Column(
+                  children: [
+                    SizedBox(
+                      height: 58.h,
+                      width: 58.w,
+                      child: _GroupImage(imageAsset: group.imageAsset),
+                    ),
+                    SizedBox(height: 5.h),
+                    Text(
+                      group.name,
+                      style: TextStyle(
+                        color: primaryFontColor,
+                        fontFamily: 'SeoulHangang',
+                        fontWeight: FontWeight.w500,
+                        fontSize: 11.sp,
+                        height: 1.0,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      softWrap: true,
+                    ),
+                  ],
                 ),
-                SizedBox(height: 5.h),
-                Text(
-                  group.name,
-                  style: TextStyle(
-                    color: primaryFontColor,
-                    fontFamily: 'SeoulHangang',
-                    fontWeight: FontWeight.w500,
-                    fontSize: 11.sp,
-                    height: 1.0,
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  softWrap: true,
-                ),
-              ],
-            ),
+              ),
+              // 마지막 아이템 오른쪽에 여백(26.w) 추가하여 끝점 맞춤
+              if (index == _groupSamples.length - 1) SizedBox(width: 26.w),
+            ],
           );
         },
         separatorBuilder: (BuildContext context, int index) => SizedBox(
@@ -540,10 +554,12 @@ class _CardScreen extends StatefulWidget {
     super.key,
     required this.isToggled,
     required this.onToggle,
+    this.onScrollToTopChange,
   });
 
   final bool isToggled;
   final ValueChanged<bool> onToggle;
+  final ValueChanged<bool>? onScrollToTopChange;
 
   @override
   State<_CardScreen> createState() => _CardScreenState();
@@ -572,10 +588,12 @@ class _CardScreenState extends State<_CardScreen> {
       setState(() {
         _showScrollToTop = true;
       });
+      widget.onScrollToTopChange?.call(true);
     } else if (_scrollController.offset <= 200 && _showScrollToTop) {
       setState(() {
         _showScrollToTop = false;
       });
+      widget.onScrollToTopChange?.call(false);
     }
   }
 
@@ -620,7 +638,9 @@ class _CardScreenState extends State<_CardScreen> {
                       margin: EdgeInsets.symmetric(horizontal: 16.w),
                       color: const Color(0xffEEE9E5),
                     ),
-                    const _RecentPostsList(), // 리스트도 여기에 포함
+                    _RecentPostsList(
+                      scrollController: _scrollController,
+                    ), // 리스트도 여기에 포함
                   ],
                 ),
               ),
@@ -638,18 +658,18 @@ class _CardScreenState extends State<_CardScreen> {
             child: GestureDetector(
               onTap: _scrollToTop,
               child: Container(
-                width: 48.w,
-                height: 48.w,
+                width: 44.w,
+                height: 44.w,
                 decoration: BoxDecoration(
-                  color: const Color(0xffFCFCFC),
+                  color: const Color(0xffFCFCFC).withOpacity(0.7), // 반투명 흰색 배경
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: const Color(0xffD5C7BC),
-                    width: 1,
+                    color: primaryFontColor, // 갈색 테두리
+                    width: 1.0,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withOpacity(0.1),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -657,7 +677,7 @@ class _CardScreenState extends State<_CardScreen> {
                 ),
                 child: Icon(
                   Icons.keyboard_arrow_up,
-                  color: const Color(0xff8B7E74),
+                  color: primaryFontColor, // 갈색 아이콘
                   size: 28.sp,
                 ),
               ),
@@ -1051,6 +1071,153 @@ class _GroupInfo {
   });
 }
 
+// 소담함 커스텀 로딩 인디케이터 (Dancing Dots)
+class _SodamLoader extends StatefulWidget {
+  const _SodamLoader();
+
+  @override
+  State<_SodamLoader> createState() => _SodamLoaderState();
+}
+
+class _SodamLoaderState extends State<_SodamLoader>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 48.w,
+      height: 12.w,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: List.generate(3, (index) {
+          return _AnimatedDot(
+            controller: _controller,
+            index: index,
+          );
+        }),
+      ),
+    );
+  }
+}
+
+class _AnimatedDot extends StatelessWidget {
+  final AnimationController controller;
+  final int index;
+
+  const _AnimatedDot({
+    required this.controller,
+    required this.index,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // 각 점마다 위상차(Delay)를 주어 물결치는 효과 생성
+    // 0~1ms 구간에서 index에 따라 타이밍 조절
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, child) {
+        // Sine wave를 이용한 부드러운 오퍼시티/크기 변화
+        // phase shift: index * 0.2
+        final double t = (controller.value - (index * 0.2)) % 1.0;
+        final double opacity = 0.4 + 0.6 * (0.5 * (1 + sin(2 * pi * t)));
+        final double scale = 0.8 + 0.2 * (0.5 * (1 + sin(2 * pi * t)));
+
+        return Transform.scale(
+          scale: scale, // 살짝 커졌다 작아짐
+          child: Opacity(
+            opacity: opacity, // 밝아졌다 어두워짐
+            child: Container(
+              width: 8.w,
+              height: 8.w,
+              decoration: BoxDecoration(
+                color: primaryFontColor, // 소담함 갈색
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// 커스텀 리프레시 컨트롤 (Pull-to-Refresh)
+class _SodamRefreshControl extends StatelessWidget {
+  final Future<void> Function() onRefresh;
+
+  const _SodamRefreshControl({required this.onRefresh});
+
+  @override
+  Widget build(BuildContext context) {
+    return CupertinoSliverRefreshControl(
+      onRefresh: onRefresh,
+      builder: (
+        BuildContext context,
+        RefreshIndicatorMode refreshState,
+        double pulledExtent,
+        double refreshTriggerPullDistance,
+        double refreshIndicatorExtent,
+      ) {
+        // 진행률 계산 (0.0 ~ 1.0)
+        final double progress =
+            (pulledExtent / refreshTriggerPullDistance).clamp(0.0, 1.0);
+
+        // 새로고침 중이거나 준비 완료 상태면 춤추는 애니메이션(_SodamLoader) 표시
+        if (refreshState == RefreshIndicatorMode.refresh ||
+            refreshState == RefreshIndicatorMode.armed) {
+          return const Center(child: _SodamLoader());
+        }
+
+        // 당기는 중(Drag)일 때: 점들이 순차적으로 진해지는 UI
+        return Center(
+          child: SizedBox(
+            width: 48.w,
+            height: 12.w,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: List.generate(3, (index) {
+                // 점 3개가 0~100% 구간에 걸쳐 순차적으로 불투명해짐
+                double dotOpacity = 0.0;
+                if (progress > (index / 3)) {
+                  dotOpacity = ((progress - (index / 3)) * 3).clamp(0.0, 1.0);
+                }
+
+                return Opacity(
+                  opacity: 0.2 + (dotOpacity * 0.8), // 기본 0.2 -> 1.0
+                  child: Container(
+                    width: 8.w,
+                    height: 8.w,
+                    decoration: BoxDecoration(
+                      color: primaryFontColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 const List<_GroupInfo> _groupSamples = [
   _GroupInfo(
     name: '따뜻한 티타임',
@@ -1226,17 +1393,45 @@ final List<_RecentPostInfo> _recentPostSamples = [
 
 // 최신글 리스트 섹션
 class _RecentPostsList extends StatefulWidget {
-  const _RecentPostsList({super.key});
+  const _RecentPostsList({
+    super.key,
+    this.scrollController, // 상위 스크롤 컨트롤러 주입
+  });
+
+  final ScrollController? scrollController;
 
   @override
   State<_RecentPostsList> createState() => _RecentPostsListState();
 }
 
 class _RecentPostsListState extends State<_RecentPostsList> {
-  bool _isExpanded = false; // 더보기 상태 관리
+  // 데이터 관리
+  List<MapEntry<String, List<_RecentPostInfo>>> _allSortedGroups = [];
+  List<MapEntry<String, List<_RecentPostInfo>>> _visibleGroups = [];
+
+  // 페이징 상태
+  int _currentPage = 1;
+  static const int _itemsPerPage = 3; // 한 번에 보여줄 그룹 수
+  static const int _maxPages = 3; // 최대 로드 페이지 (제한적 무한 스크롤)
+
+  bool _isLoading = false;
+  bool _isFinished = false; // 모든 데이터를 다 보여줬거나, 최대 페이지 도달 시
 
   @override
-  Widget build(BuildContext context) {
+  void initState() {
+    super.initState();
+    _initData();
+    // 스크롤 리스너 등록
+    widget.scrollController?.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    widget.scrollController?.removeListener(_onScroll);
+    super.dispose();
+  }
+
+  void _initData() {
     // 1. 읽지 않은 글만 필터링
     final List<_RecentPostInfo> unreadPosts =
         _recentPostSamples.where((post) => !post.isRead).toList();
@@ -1252,24 +1447,66 @@ class _RecentPostsListState extends State<_RecentPostsList> {
       }
     }
 
-    // 3. 정렬 (가장 최신 글이 있는 그룹이 먼저 오도록)
-    // 그룹별 가장 최신 글의 dateTime 비교
-    final List<MapEntry<String, List<_RecentPostInfo>>> sortedGroupEntries =
-        groupedPosts.entries.toList()
-          ..sort((a, b) {
-            final DateTime latestA = a.value.map((e) => e.dateTime).reduce(
-                (value, element) => value.isAfter(element) ? value : element);
-            final DateTime latestB = b.value.map((e) => e.dateTime).reduce(
-                (value, element) => value.isAfter(element) ? value : element);
-            return latestB.compareTo(latestA); // 내림차순 정렬
-          });
+    // 3. 정렬
+    _allSortedGroups = groupedPosts.entries.toList()
+      ..sort((a, b) {
+        final DateTime latestA = a.value.map((e) => e.dateTime).reduce(
+            (value, element) => value.isAfter(element) ? value : element);
+        final DateTime latestB = b.value.map((e) => e.dateTime).reduce(
+            (value, element) => value.isAfter(element) ? value : element);
+        return latestB.compareTo(latestA);
+      });
 
-    // 4. 노출할 그룹 결정 (펼쳐지지 않았으면 상위 3개만)
-    final int visibleGroupCount = _isExpanded ? sortedGroupEntries.length : 3;
-    final List<MapEntry<String, List<_RecentPostInfo>>> visibleGroups =
-        sortedGroupEntries.take(visibleGroupCount).toList();
-    final bool hasMore = sortedGroupEntries.length > 3;
+    // 초기 데이터 로드 (첫 페이지)
+    _loadGroups();
+  }
 
+  void _loadGroups() {
+    if (_isFinished) return;
+
+    final int targetCount = _currentPage * _itemsPerPage;
+
+    // 데이터 갱신
+    if (targetCount >= _allSortedGroups.length) {
+      // 실제 데이터가 끝남
+      _visibleGroups = _allSortedGroups;
+      _isFinished = true;
+    } else {
+      // 페이징 처리
+      _visibleGroups = _allSortedGroups.take(targetCount).toList();
+
+      // 최대 페이지 도달 체크
+      if (_currentPage >= _maxPages) {
+        _isFinished = true;
+      }
+    }
+  }
+
+  void _onScroll() async {
+    if (_isLoading || _isFinished || widget.scrollController == null) return;
+
+    // 스크롤이 바닥에 가까워지면 (_bottomThreshold)
+    const double bottomThreshold = 200.0;
+    if (widget.scrollController!.position.extentAfter < bottomThreshold) {
+      setState(() {
+        _isLoading = true;
+      });
+
+      // 로딩 시뮬레이션 (네트워크 통신 느낌)
+      await Future.delayed(const Duration(milliseconds: 1000));
+
+      if (!mounted) return;
+
+      setState(() {
+        _currentPage++;
+        _isLoading = false;
+        _loadGroups();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xffFCFCFC),
@@ -1286,56 +1523,52 @@ class _RecentPostsListState extends State<_RecentPostsList> {
             ),
           ),
           SizedBox(height: 18.h),
-          // 그룹 리스트 렌더링
-          ...visibleGroups.asMap().entries.map((entry) {
+
+          // 리스트 렌더링
+          ..._visibleGroups.asMap().entries.map((entry) {
             final int index = entry.key;
             final MapEntry<String, List<_RecentPostInfo>> data = entry.value;
-            // 현재 보여지는 리스트의 마지막 항목이면 구분선을 숨김
-            final bool isLastItem = index == visibleGroups.length - 1;
+            // 마지막 아이템이면서 로딩이 끝났을 때만 구분선 숨김 처리 등 (필요 시)
+            final bool isLastItem = index == _visibleGroups.length - 1;
 
             return _RecentPostGroupItem(
               groupName: data.key,
               posts: data.value,
-              isLast: isLastItem,
+              isLast: isLastItem && _isFinished,
             );
           }),
 
-          // 더보기 / 접기 버튼
-          if (hasMore)
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  _isExpanded = !_isExpanded; // 토글
-                });
-              },
-              behavior: HitTestBehavior.opaque,
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 10.h), // 20 -> 10으로 축소
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+          // 로딩 중 인디케이터
+          if (_isLoading)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 20.h),
+              child: const Center(
+                child: _SodamLoader(),
+              ),
+            ),
+
+          // 끝 메시지 (The End Footer)
+          if (_isFinished && !_isLoading)
+            Padding(
+              padding: EdgeInsets.only(top: 10.h, bottom: 40.h),
+              child: Center(
+                child: Column(
                   children: [
                     Text(
-                      _isExpanded ? '접기' : '더보기',
+                      '여기까지가 최근 소식이에요 🌙',
                       style: TextStyle(
-                        color: const Color(0xff999999),
                         fontFamily: 'SeoulHangang',
-                        fontSize: 14.sp,
+                        color: const Color(0xffD5C7BC),
+                        fontSize: 12.sp,
                       ),
                     ),
-                    SizedBox(width: 4.w),
-                    Icon(
-                      _isExpanded
-                          ? Icons.keyboard_arrow_up
-                          : Icons.keyboard_arrow_down,
-                      color: const Color(0xff999999),
-                      size: 18.sp,
-                    ),
+                    SizedBox(height: 8.h),
                   ],
                 ),
               ),
             ),
 
-          SizedBox(height: 30.h), // 100 -> 30으로 축소
+          SizedBox(height: 30.h),
         ],
       ),
     );
