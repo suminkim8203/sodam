@@ -9,8 +9,8 @@ import 'package:sodamham/user/view/component/sub_title.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
-class CreateNewGroupScreen extends StatelessWidget {
-  const CreateNewGroupScreen({super.key});
+class GroupCreateScreen extends StatelessWidget {
+  const GroupCreateScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

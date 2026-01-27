@@ -8,7 +8,8 @@ import 'package:flutter_switch/flutter_switch.dart';
 import 'package:sodamham/common/color.dart';
 import 'package:sodamham/user/view/component/post_item.dart';
 import 'package:sodamham/user/view/component/turn_notification_toast.dart';
-import 'package:sodamham/user/view/create_new_group_screen.dart';
+import 'package:sodamham/user/view/group_screen.dart';
+import 'package:sodamham/user/view/group_create_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -66,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (_) => CreateNewGroupScreen()));
+                                builder: (_) => GroupCreateScreen()));
                       },
                       child: Padding(
                         padding: const EdgeInsets.all(4.0),
@@ -127,7 +128,7 @@ class _MyGroupState extends State<_MyGroup> {
   // 차례 알림 샘플 데이터 (State로 관리)
   final List<TurnNotification> _turnNotificationSamples = [
     TurnNotification(
-      groupName: '따뜻한 티타임',
+      groupName: '집단적 독백',
       groupImage: 'asset/image/alexander-lunyov-jdBFglNgYKc-unsplash.jpg',
       userName: '김수민',
     ),
@@ -508,31 +509,42 @@ class _SlideHeader extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (index == 0) SizedBox(width: 26.w),
-              SizedBox(
-                width: 58.w,
-                child: Column(
-                  children: [
-                    SizedBox(
-                      height: 58.h,
-                      width: 58.w,
-                      child: _GroupImage(imageAsset: group.imageAsset),
-                    ),
-                    SizedBox(height: 5.h),
-                    Text(
-                      group.name,
-                      style: TextStyle(
-                        color: primaryFontColor,
-                        fontFamily: 'SeoulHangang',
-                        fontWeight: FontWeight.w500,
-                        fontSize: 11.sp,
-                        height: 1.0,
+              GestureDetector(
+                onTap: () {
+                  if (group.name == '집단적 독백') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const GroupScreen()),
+                    );
+                  }
+                },
+                child: SizedBox(
+                  width: 58.w,
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        height: 58.h,
+                        width: 58.w,
+                        child: _GroupImage(imageAsset: group.imageAsset),
                       ),
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      softWrap: true,
-                    ),
-                  ],
+                      SizedBox(height: 5.h),
+                      Text(
+                        group.name,
+                        style: TextStyle(
+                          color: primaryFontColor,
+                          fontFamily: 'SeoulHangang',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 11.sp,
+                          height: 1.0,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: true,
+                      ),
+                    ],
+                  ),
                 ),
               ),
               // 마지막 아이템 오른쪽에 여백(26.w) 추가하여 끝점 맞춤
@@ -983,43 +995,53 @@ class _GroupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 72.w,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 72.w,
-            height: 72.w,
-            child: _GroupImage(imageAsset: info.imageAsset),
-          ),
-          SizedBox(height: 6.h),
-          Text(
-            info.name,
-            style: TextStyle(
-              color: primaryFontColor,
-              fontFamily: 'SeoulHangang',
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w500,
-              height: 1.0,
+    return GestureDetector(
+      onTap: () {
+        if (info.name == '집단적 독백') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const GroupScreen()),
+          );
+        }
+      },
+      child: SizedBox(
+        width: 72.w,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 72.w,
+              height: 72.w,
+              child: _GroupImage(imageAsset: info.imageAsset),
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          SizedBox(height: 2.h),
-          Text(
-            info.description,
-            style: TextStyle(
-              color: const Color(0xff7C6C62),
-              fontFamily: 'SeoulHangang',
-              fontSize: 11.sp,
-              height: 1.0,
+            SizedBox(height: 6.h),
+            Text(
+              info.name,
+              style: TextStyle(
+                color: primaryFontColor,
+                fontFamily: 'SeoulHangang',
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w500,
+                height: 1.0,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+            SizedBox(height: 2.h),
+            Text(
+              info.description,
+              style: TextStyle(
+                color: const Color(0xff7C6C62),
+                fontFamily: 'SeoulHangang',
+                fontSize: 11.sp,
+                height: 1.0,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1220,7 +1242,7 @@ class _SodamRefreshControl extends StatelessWidget {
 
 const List<_GroupInfo> _groupSamples = [
   _GroupInfo(
-    name: '따뜻한 티타임',
+    name: '집단적 독백',
     description: '향기로운 차와 함께 하루를 느긋하게 기록하는 모임',
     imageAsset: 'asset/image/alexander-lunyov-jdBFglNgYKc-unsplash.jpg',
   ),
@@ -1303,7 +1325,7 @@ final List<_RecentPostInfo> _recentPostSamples = [
     dateTime: DateTime(2023, 10, 24, 14, 30),
   ),
   _RecentPostInfo(
-    groupName: '따뜻한 티타임',
+    groupName: '집단적 독백',
     groupImage: 'asset/image/alexander-lunyov-jdBFglNgYKc-unsplash.jpg',
     content: '새로 산 찻잔을 자랑하고 싶어요! 파란색 무늬가 들어가서 아주 예쁩니다.',
     date: '10.23',
@@ -1700,9 +1722,8 @@ class _HighlighterText extends StatelessWidget {
           left: 0,
           right: 0,
           child: Container(
-            height: (fontSize * 0.5).h,
-            color:
-                const Color(0xFFE9D5CC), // Warm highlighter color (Soft Yellow)
+            height: (fontSize * 0.8).h,
+            color: const Color(0xFFEEE9E5), // Soft light color
           ),
         ),
         Text(
