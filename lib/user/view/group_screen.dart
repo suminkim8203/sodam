@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:sodamham/common/color.dart';
@@ -84,6 +85,8 @@ class _GroupContentState extends State<_GroupContent> {
   late ScrollController _scrollController;
   bool _showScrollToTop = false;
   bool _hideNotifications = false;
+  // bool _blockScrollButton = false; // 삭제
+  // Timer? _interactionTimer; // 삭제
 
   @override
   void initState() {
@@ -173,6 +176,7 @@ class _GroupContentState extends State<_GroupContent> {
 
         // 맨 위로 가기 버튼
         AnimatedPositioned(
+          key: const ValueKey('scrollToTopBtn'), // 리빌드 시 상태 유지 (필수)
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
           bottom: _showScrollToTop ? 30.h : -60.h,
@@ -555,14 +559,67 @@ class _GalleryGridItem extends StatefulWidget {
 }
 
 class _GalleryGridItemState extends State<_GalleryGridItem> {
-  bool _isPressed = false;
+  Timer? _holdTimer;
+  OverlayEntry? _overlayEntry;
+
+  @override
+  void dispose() {
+    _cancelTimer();
+    _removeOverlay();
+    super.dispose();
+  }
+
+  void _cancelTimer() {
+    _holdTimer?.cancel();
+    _holdTimer = null;
+  }
+
+  void _removeOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  void _onTapDown(TapDownDetails details) {
+    _cancelTimer();
+    _holdTimer = Timer(const Duration(milliseconds: 300), () {
+      _showOverlay();
+    });
+  }
+
+  void _onTapUp(TapUpDetails details) {
+    _cancelTimer();
+    _removeOverlay();
+  }
+
+  void _onTapCancel() {
+    _cancelTimer();
+    _removeOverlay();
+  }
+
+  void _showOverlay() {
+    final renderBox = context.findRenderObject() as RenderBox;
+    final size = renderBox.size;
+    final offset = renderBox.localToGlobal(Offset.zero);
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) => _PreviewOverlay(
+        startRect: offset & size,
+        imagePath: widget.imagePath,
+        date: widget.date,
+        author: widget.author,
+        content: widget.content,
+      ),
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
+  }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) => setState(() => _isPressed = false),
-      onTapCancel: () => setState(() => _isPressed = false),
+      onTapDown: _onTapDown,
+      onTapUp: _onTapUp,
+      onTapCancel: _onTapCancel,
       child: Container(
         decoration: BoxDecoration(
           color: Colors.grey[300],
@@ -575,43 +632,215 @@ class _GalleryGridItemState extends State<_GalleryGridItem> {
             fit: BoxFit.cover,
           ),
         ),
-        child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 200),
-          opacity: _isPressed ? 1.0 : 0.0,
-          child: Container(
-            color: const Color(0xff4C4545).withOpacity(0.7),
-            padding: EdgeInsets.all(8.w),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '${widget.date}\n${widget.author}',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: const Color(0xffF9F9F9),
-                    fontSize: 10.sp,
-                    fontFamily: 'SeoulHangang',
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(height: 8.h),
-                Text(
-                  widget.content,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: const Color(0xffF9F9F9),
-                    fontSize: 11.sp,
-                    fontFamily: 'SeoulHangang',
-                    height: 1.3,
-                  ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
+  }
+}
+
+class _PreviewOverlay extends StatefulWidget {
+  final Rect startRect;
+  final String imagePath;
+  final String date;
+  final String author;
+  final String content;
+
+  const _PreviewOverlay({
+    required this.startRect,
+    required this.imagePath,
+    required this.date,
+    required this.author,
+    required this.content,
+  });
+
+  @override
+  State<_PreviewOverlay> createState() => _PreviewOverlayState();
+}
+
+class _PreviewOverlayState extends State<_PreviewOverlay>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _opacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 350)); // Slower
+
+    _scaleAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.fastOutSlowIn, // Smoother
+    );
+
+    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // 팝업 크기 (화면 너비의 85% 정도)
+    final screenSize = MediaQuery.of(context).size;
+    final popupWidth = screenSize.width * 0.85;
+    final popupHeight = popupWidth * 1.15; // 정사각형에 가깝게 조정
+
+    // 중앙 위치 계산
+    final centerLeft = (screenSize.width - popupWidth) / 2;
+    final centerTop = (screenSize.height - popupHeight) / 2;
+
+    return Stack(
+      children: [
+        // 뒤에 딤 처리
+        Positioned.fill(
+          child: AnimatedBuilder(
+            animation: _opacityAnimation,
+            builder: (context, child) {
+              return Container(
+                color: Colors.black.withOpacity(0.4 * _opacityAnimation.value),
+              );
+            },
+          ),
+        ),
+        AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            // 시작 위치(grid item)에서 중앙 팝업 위치로 보간
+            // 하지만 사용자 요청은 "원래 위치에서 커지듯 팝업"
+            // 여기서는 단순 ScaleTransition + 중앙 배치로 구현하되,
+            // Transform.translate를 써서 시작점을 맞출 수도 있음.
+            // "원래 위치에서 커지듯" -> Hero 느낌.
+            // 간단하게: 중앙에서 커지게 하되, 시작 Rect를 고려하지 않고 중앙 팝업으로 우선 구현.
+            // (사용자가 '원래 위치에서 커지듯'이라 했으므로 시작 위치 고려가 좋음)
+
+            final currentWidth = _lerp(
+                widget.startRect.width, popupWidth, _scaleAnimation.value);
+            final currentHeight = _lerp(
+                widget.startRect.height, popupHeight, _scaleAnimation.value);
+
+            final currentLeft =
+                _lerp(widget.startRect.left, centerLeft, _scaleAnimation.value);
+            final currentTop =
+                _lerp(widget.startRect.top, centerTop, _scaleAnimation.value);
+
+            return Positioned(
+              left: currentLeft,
+              top: currentTop,
+              width: currentWidth,
+              height: currentHeight,
+              child: Material(
+                color: Colors.transparent,
+                elevation: 20,
+                borderRadius: BorderRadius.circular(4.r), // 폴라로이드 감성
+                child: Container(
+                  clipBehavior: Clip.hardEdge,
+                  decoration: BoxDecoration(
+                    color: const Color(0xffFCFCFC), // 종이 질감 색상
+                    borderRadius: BorderRadius.circular(4.r),
+                  ),
+                  child: Column(
+                    children: [
+                      // 사진 영역 (위쪽 75%)
+                      Expanded(
+                        flex: 3, // 3:1 비율
+                        child: Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            image: DecorationImage(
+                              image: AssetImage(widget.imagePath),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          // 사진 위에 날짜 도장 찍기
+                          child: Stack(
+                            children: [
+                              Positioned(
+                                bottom: 10.h,
+                                right: 10.w,
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8.w, vertical: 4.h),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withOpacity(0.5),
+                                    borderRadius: BorderRadius.circular(4.r),
+                                  ),
+                                  child: Text(
+                                    widget.date,
+                                    style: TextStyle(
+                                      fontFamily: 'SeoulHangang',
+                                      fontSize: 12.sp,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1.0,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      // 텍스트 영역 (아래쪽 25%)
+                      Expanded(
+                        flex: 1,
+                        child: Padding(
+                          padding: EdgeInsets.all(16.w),
+                          child: Column(
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start, // 좌측 정렬
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  widget.content,
+                                  textAlign: TextAlign.left, // 좌측 정렬
+                                  style: TextStyle(
+                                    fontFamily: 'SeoulHangang',
+                                    fontSize: 14.sp,
+                                    color: primaryFontColor,
+                                    height: 1.4,
+                                  ),
+                                  maxLines: 4,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    'by. ${widget.author}',
+                                    style: TextStyle(
+                                      fontFamily: 'SeoulHangang',
+                                      fontSize: 12.sp,
+                                      color: const Color(0xff999999),
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  double _lerp(double a, double b, double t) {
+    return a + (b - a) * t;
   }
 }

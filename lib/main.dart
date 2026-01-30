@@ -13,7 +13,11 @@ import 'package:sodamham/user/view/sign_up_screen_1.dart';
 import 'package:sodamham/user/view/sign_up_screen_2.dart';
 import 'package:sodamham/user/view/start_group_screen.dart';
 
-void main() {
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/date_symbol_data_local.dart';
+
+Future<void> main() async {
+  await initializeDateFormatting('ko_KR', null);
   runApp(const MyApp());
 }
 
@@ -29,6 +33,15 @@ class MyApp extends StatelessWidget {
       splitScreenMode: true,
       builder: (context, child) {
         return MaterialApp(
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale('ko', 'KR'),
+            Locale('en', 'US'),
+          ],
           theme: ThemeData(
               fontFamily: 'SeoulHangang',
               textTheme: ThemeData.light().textTheme.apply(
