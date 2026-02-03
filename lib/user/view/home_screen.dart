@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_switch/flutter_switch.dart';
 import 'package:sodamham/common/color.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:sodamham/user/view/component/post_item.dart';
 import 'package:sodamham/user/view/component/turn_notification_toast.dart';
 import 'package:sodamham/user/view/group_screen.dart';
@@ -340,11 +341,13 @@ class _SlideScreen extends StatefulWidget {
     required this.isToggled,
     required this.onToggle,
     this.onScrollToTopChange,
+    this.isLoading = false,
   });
 
   final bool isToggled;
   final ValueChanged<bool> onToggle;
   final ValueChanged<bool>? onScrollToTopChange;
+  final bool isLoading;
 
   @override
   State<_SlideScreen> createState() => _SlideScreenState();
@@ -353,12 +356,38 @@ class _SlideScreen extends StatefulWidget {
 class _SlideScreenState extends State<_SlideScreen> {
   late final ScrollController _scrollController;
   bool _showScrollToTop = false;
+  bool _isLoading = true; // 초기 로딩 상태
+  bool _isMoreLoading = false; // 추가 로딩 상태
+  List<_GroupInfo> _items = []; // 무한 스크롤용 데이터 리스트
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
+    // Data restored for display
+    _items = List.from(_groupSamples);
+  }
+
+  // _loadData method removed as initial loading state is passed via widget.isLoading
+  // If initial data loading is still needed within _SlideScreenState,
+  // it should be triggered by a change in widget.isLoading or similar.
+
+  Future<void> _loadMoreData() async {
+    if (_isMoreLoading) return;
+    setState(() {
+      _isMoreLoading = true;
+    });
+
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (mounted) {
+      setState(() {
+        // 더미 데이터 5개 추가
+        _items.addAll(_groupSamples.take(5));
+        _isMoreLoading = false;
+      });
+    }
   }
 
   @override
@@ -379,6 +408,14 @@ class _SlideScreenState extends State<_SlideScreen> {
         _showScrollToTop = false;
       });
       widget.onScrollToTopChange?.call(false);
+    }
+
+    // 무한 스크롤 감지 (바닥에 닿았을 때)
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 100 &&
+        !_isLoading &&
+        !_isMoreLoading) {
+      _loadMoreData();
     }
   }
 
@@ -422,7 +459,7 @@ class _SlideScreenState extends State<_SlideScreen> {
                   ),
                   SizedBox(height: 5.h), // Toolbar + Gap
                   // Padding 제거 (개방형 가로 스크롤)
-                  const _SlideHeader(),
+                  _SlideHeader(isLoading: widget.isLoading),
                   SizedBox(height: 16.h), // Header + Gap
                 ],
               ),
@@ -432,8 +469,16 @@ class _SlideScreenState extends State<_SlideScreen> {
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (BuildContext context, int index) {
+                    // 로딩 중이면 스켈레톤
+                    if (widget.isLoading) {
+                      return const Padding(
+                        padding: EdgeInsets.only(bottom: 20.0),
+                        child: _SkeletonPostItem(),
+                      );
+                    }
+
                     final String imagePath =
-                        _groupSamples[index % _groupSamples.length].imageAsset;
+                        _items[index % _items.length].imageAsset;
                     return Padding(
                       padding: EdgeInsets.only(bottom: 20.h),
                       child: PostItem(
@@ -441,10 +486,19 @@ class _SlideScreenState extends State<_SlideScreen> {
                       ),
                     );
                   },
-                  childCount: 10,
+                  childCount:
+                      widget.isLoading ? 3 : _items.length, // 로딩시 3개, 아니면 실제 개수
                 ),
               ),
             ),
+            // 무한 스크롤 로딩 인디케이터 (Sodam Dots)
+            if (_isMoreLoading)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.only(bottom: 20.h),
+                  child: const Center(child: _SodamLoader()),
+                ),
+              ),
           ],
         ),
         // 맨 위로 가기 버튼 (기존 코드 유지)
@@ -491,7 +545,9 @@ class _SlideScreenState extends State<_SlideScreen> {
 
 // 슬라이드형 - 가로 스크롤 헤더
 class _SlideHeader extends StatelessWidget {
-  const _SlideHeader({super.key});
+  final bool isLoading;
+
+  const _SlideHeader({super.key, this.isLoading = false});
 
   @override
   Widget build(BuildContext context) {
@@ -500,8 +556,20 @@ class _SlideHeader extends StatelessWidget {
       child: ListView.separated(
         padding: EdgeInsets.zero, // 기본 패딩 제거
         scrollDirection: Axis.horizontal,
-        itemCount: _groupSamples.length, // 실제 데이터 개수 (Safety)
+        itemCount:
+            isLoading ? 10 : _groupSamples.length, // 로딩 시 10개, 아니면 실제 데이터
         itemBuilder: (BuildContext context, int index) {
+          if (isLoading) {
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (index == 0) SizedBox(width: 26.w),
+                const _SkeletonUniqueGroupItem(),
+                if (index == 9) SizedBox(width: 26.w), // 10개일 때 마지막 여백
+              ],
+            );
+          }
+
           final group = _groupSamples[index];
           // 첫 번째 아이템 왼쪽에만 여백(22.w) 추가하여 시작점 맞춤
           // 렌더링 시 Row로 감싸서 처리
@@ -567,11 +635,13 @@ class _CardScreen extends StatefulWidget {
     required this.isToggled,
     required this.onToggle,
     this.onScrollToTopChange,
+    this.isLoading = false,
   });
 
   final bool isToggled;
   final ValueChanged<bool> onToggle;
   final ValueChanged<bool>? onScrollToTopChange;
+  final bool isLoading;
 
   @override
   State<_CardScreen> createState() => _CardScreenState();
@@ -643,7 +713,7 @@ class _CardScreenState extends State<_CardScreen> {
                       ),
                     ),
                     SizedBox(height: 5.h), // Toolbar + Gap
-                    const _CardHeader(),
+                    _CardHeader(isLoading: widget.isLoading),
                     SizedBox(height: 22.h),
                     Container(
                       height: 8.h,
@@ -652,6 +722,7 @@ class _CardScreenState extends State<_CardScreen> {
                     ),
                     _RecentPostsList(
                       scrollController: _scrollController,
+                      isLoading: widget.isLoading,
                     ), // 리스트도 여기에 포함
                   ],
                 ),
@@ -703,7 +774,9 @@ class _CardScreenState extends State<_CardScreen> {
 
 // 카드형 - 헤더
 class _CardHeader extends StatefulWidget {
-  const _CardHeader({super.key});
+  final bool isLoading;
+
+  const _CardHeader({super.key, this.isLoading = false});
 
   @override
   State<_CardHeader> createState() => _CardHeaderState();
@@ -749,6 +822,28 @@ class _CardHeaderState extends State<_CardHeader> {
 
   @override
   Widget build(BuildContext context) {
+    // 로딩 시: 스켈레톤 번들 1개만 보여줌
+    if (widget.isLoading) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: 260.h,
+            child: const _SkeletonGroupBundle(),
+          ),
+          SizedBox(height: 16.h),
+          // Pagination Indicator also skeleton or hidden?
+          // For simplicity, hide or show 1 dot
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _PaginationDot(isActive: true, onTap: () {}),
+            ],
+          ),
+        ],
+      );
+    }
+
     final int bundleCount = _bundleCount;
     // 카드 영역(260.h) + 간격(16.h) + 페이지네이션(~20.h)
     // 부모(_CardScreenState)에서 headerHeight로 충분한 공간 확보됨
@@ -1418,9 +1513,11 @@ class _RecentPostsList extends StatefulWidget {
   const _RecentPostsList({
     super.key,
     this.scrollController, // 상위 스크롤 컨트롤러 주입
+    this.isLoading = false,
   });
 
   final ScrollController? scrollController;
+  final bool isLoading;
 
   @override
   State<_RecentPostsList> createState() => _RecentPostsListState();
@@ -1546,19 +1643,30 @@ class _RecentPostsListState extends State<_RecentPostsList> {
           ),
           SizedBox(height: 18.h),
 
-          // 리스트 렌더링
-          ..._visibleGroups.asMap().entries.map((entry) {
-            final int index = entry.key;
-            final MapEntry<String, List<_RecentPostInfo>> data = entry.value;
-            // 마지막 아이템이면서 로딩이 끝났을 때만 구분선 숨김 처리 등 (필요 시)
-            final bool isLastItem = index == _visibleGroups.length - 1;
+          SizedBox(height: 18.h),
 
-            return _RecentPostGroupItem(
-              groupName: data.key,
-              posts: data.value,
-              isLast: isLastItem && _isFinished,
-            );
-          }),
+          // 로딩 중이면 스켈레톤 리스트 표시
+          if (widget.isLoading)
+            Column(
+              children: List.generate(
+                3,
+                (index) => const _SkeletonRecentPostGroupItem(),
+              ),
+            )
+          else
+            // 리스트 렌더링
+            ..._visibleGroups.asMap().entries.map((entry) {
+              final int index = entry.key;
+              final MapEntry<String, List<_RecentPostInfo>> data = entry.value;
+              // 마지막 아이템이면서 로딩이 끝났을 때만 구분선 숨김 처리 등 (필요 시)
+              final bool isLastItem = index == _visibleGroups.length - 1;
+
+              return _RecentPostGroupItem(
+                groupName: data.key,
+                posts: data.value,
+                isLast: isLastItem && _isFinished,
+              );
+            }),
 
           // 로딩 중 인디케이터
           if (_isLoading)
@@ -1738,6 +1846,292 @@ class _HighlighterText extends StatelessWidget {
           strutStyle: StrutStyle(fontSize: fontSize.sp, height: 1.0),
         ),
       ],
+    );
+  }
+}
+
+class _SkeletonPostItem extends StatelessWidget {
+  const _SkeletonPostItem();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      // Padding matches PostItem
+      padding: EdgeInsets.only(bottom: 20.h),
+      child: Column(
+        children: [
+          // Header Row (Matches PostItem _Header)
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 15.w),
+            child: Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: Row(
+                children: [
+                  // Profile Circle
+                  Container(
+                    width: 30.w,
+                    height: 30.h,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  SizedBox(width: 10.w),
+                  // Name Text
+                  Container(
+                    width: 40.w,
+                    height: 12.h,
+                    color: Colors.white,
+                  ),
+                  SizedBox(width: 5.w),
+                  // Group Name Text
+                  Container(
+                    width: 80.w,
+                    height: 12.h,
+                    color: Colors.white,
+                  ),
+                  const Spacer(),
+                  // Bookmark Icon Placeholder
+                  Container(
+                    width: 24.w,
+                    height: 24.h,
+                    color: Colors.white,
+                  ),
+                  SizedBox(width: 20.w),
+                  // Kebab Icon Placeholder
+                  Container(
+                    width: 24.w,
+                    height: 24.h,
+                    color: Colors.white,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(height: 10.h),
+          // Image Container (Matches PostItem Image)
+          Container(
+            width: double.infinity,
+            height: 330.h,
+            decoration: BoxDecoration(
+              // Background Shimmer
+              color: Colors.white,
+              borderRadius:
+                  BorderRadius.circular(1.0), // Slight radius or sharp
+            ),
+            child: Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: Container(
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SkeletonUniqueGroupItem extends StatelessWidget {
+  const _SkeletonUniqueGroupItem();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 58.w,
+      child: Column(
+        children: [
+          Shimmer.fromColors(
+            baseColor: Colors.grey[300]!,
+            highlightColor: Colors.grey[100]!,
+            child: Container(
+              width: 58.w,
+              height: 58.w, // Rounded Square
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(2.w), // Matches _GroupImage
+              ),
+            ),
+          ),
+          SizedBox(height: 5.h),
+          Shimmer.fromColors(
+            baseColor: Colors.grey[300]!,
+            highlightColor: Colors.grey[100]!,
+            child: Container(
+              width: 40.w,
+              height: 10.h,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SkeletonGroupBundle extends StatelessWidget {
+  const _SkeletonGroupBundle({super.key});
+
+  static const double _itemWidth = 72;
+  static const double _itemHeight = 124;
+  static const double _rowSpacing = 12;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 42.w),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: List.generate(3, (index) => const _SkeletonGroupCard()),
+          ),
+          SizedBox(height: _rowSpacing.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: List.generate(3, (index) => const _SkeletonGroupCard()),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SkeletonGroupCard extends StatelessWidget {
+  const _SkeletonGroupCard({
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 72.w,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Shimmer.fromColors(
+            baseColor: Colors.grey[300]!,
+            highlightColor: Colors.grey[100]!,
+            child: Container(
+              width: 72.w,
+              height: 72.w,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(2.w), // User requested 2
+              ),
+            ),
+          ),
+          SizedBox(height: 6.h),
+          Shimmer.fromColors(
+            baseColor: Colors.grey[300]!,
+            highlightColor: Colors.grey[100]!,
+            child: Container(
+              width: 50.w,
+              height: 14.h,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SkeletonRecentPostGroupItem extends StatelessWidget {
+  const _SkeletonRecentPostGroupItem({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 29.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Group Header
+              Row(
+                children: [
+                  Shimmer.fromColors(
+                    baseColor: Colors.grey[300]!,
+                    highlightColor: Colors.grey[100]!,
+                    child: Container(
+                      width: 20.w,
+                      height: 20.w,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius:
+                            BorderRadius.circular(20.w * 0.4), // Approx match
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 8.w),
+                  Shimmer.fromColors(
+                    baseColor: Colors.grey[300]!,
+                    highlightColor: Colors.grey[100]!,
+                    child: Container(
+                      width: 80.w,
+                      height: 13.h,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 10.h),
+              // Post Items (2 items for skeleton)
+              const _SkeletonRecentPostContentItem(),
+              const _SkeletonRecentPostContentItem(),
+            ],
+          ),
+        ),
+        SizedBox(height: 16.h),
+        // Divider
+        Container(
+          width: 340.w,
+          height: 1,
+          color: const Color(0xffF0F0F0),
+        ),
+        SizedBox(height: 16.h),
+      ],
+    );
+  }
+}
+
+class _SkeletonRecentPostContentItem extends StatelessWidget {
+  const _SkeletonRecentPostContentItem({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 8.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: Container(
+                height: 12.h,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          SizedBox(width: 8.w),
+          Shimmer.fromColors(
+            baseColor: Colors.grey[300]!,
+            highlightColor: Colors.grey[100]!,
+            child: Container(
+              width: 30.w,
+              height: 11.h,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

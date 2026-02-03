@@ -5,6 +5,8 @@ import 'package:sodamham/common/color.dart';
 import 'package:sodamham/user/view/component/turn_notification_toast.dart';
 import 'package:sodamham/user/view/diary_create_screen.dart';
 import 'package:sodamham/user/view/home_screen.dart';
+import 'package:sodamham/user/view/diary_detail_screen.dart';
+import 'package:shimmer/shimmer.dart';
 
 class GroupScreen extends StatelessWidget {
   const GroupScreen({super.key});
@@ -86,13 +88,25 @@ class _GroupContentState extends State<_GroupContent> {
   bool _showScrollToTop = false;
   bool _hideNotifications = false;
   // bool _blockScrollButton = false; // 삭제
-  // Timer? _interactionTimer; // 삭제
+  //  Timer? _interactionTimer; // 쿨다운 타이머
+  bool _isLoading = true; // 로딩 상태 추가
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
+    _loadData(); // 데이터 로딩 시뮬레이션
+  }
+
+  Future<void> _loadData() async {
+    // 2초 딜레이 후 로딩 완료 처리
+    await Future.delayed(const Duration(seconds: 2));
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -166,6 +180,7 @@ class _GroupContentState extends State<_GroupContent> {
               padding: EdgeInsets.only(bottom: 50.h),
               sliver: _MonthlyGalleryList(
                 posts: _posts,
+                isLoading: _isLoading, // 로딩 상태 전달
                 onWrite: _navigateToCreateDiary, // 콜백 전달
               ),
             ),
@@ -458,10 +473,12 @@ class _GroupInfoSection extends StatelessWidget {
 
 class _MonthlyGalleryList extends StatelessWidget {
   final List<_PostData> posts;
+  final bool isLoading;
   final VoidCallback onWrite; // 콜백 추가
 
   const _MonthlyGalleryList({
     required this.posts,
+    required this.isLoading,
     required this.onWrite,
   });
 
@@ -519,8 +536,11 @@ class _MonthlyGalleryList extends StatelessWidget {
                     mainAxisSpacing: 0,
                     childAspectRatio: 1.0,
                   ),
-                  itemCount: posts.length,
+                  itemCount: isLoading ? 9 : posts.length, // 로딩 중이면 9개 스켈레톤
                   itemBuilder: (context, gridIndex) {
+                    if (isLoading) {
+                      return const _SkeletonGridItem();
+                    }
                     final post = posts[gridIndex];
                     return _GalleryGridItem(
                       imagePath: post.imagePath,
@@ -587,8 +607,25 @@ class _GalleryGridItemState extends State<_GalleryGridItem> {
   }
 
   void _onTapUp(TapUpDetails details) {
-    _cancelTimer();
-    _removeOverlay();
+    if (_holdTimer != null && _holdTimer!.isActive) {
+      // Short tap: Cancel timer and navigate
+      _cancelTimer();
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => DiaryDetailScreen(
+            imagePath: widget.imagePath,
+            content: widget.content,
+            date: widget.date,
+            author: widget.author,
+          ),
+        ),
+      );
+    } else {
+      // Long press: Just close overlay
+      _cancelTimer();
+      _removeOverlay();
+    }
   }
 
   void _onTapCancel() {
@@ -842,5 +879,25 @@ class _PreviewOverlayState extends State<_PreviewOverlay>
 
   double _lerp(double a, double b, double t) {
     return a + (b - a) * t;
+  }
+}
+
+class _SkeletonGridItem extends StatelessWidget {
+  const _SkeletonGridItem({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xffF9F9F9), width: 1),
+      ),
+      child: Shimmer.fromColors(
+        baseColor: Colors.grey[300]!,
+        highlightColor: Colors.grey[100]!,
+        child: Container(
+          color: Colors.white,
+        ),
+      ),
+    );
   }
 }
