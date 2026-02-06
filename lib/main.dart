@@ -45,6 +45,11 @@ class MyApp extends StatelessWidget {
               Locale('en', 'US'),
             ],
             theme: ThemeData(
+                textSelectionTheme: TextSelectionThemeData(
+                  cursorColor: primaryFontColor,
+                  selectionColor: const Color(0xffE9D5CC), // Beige
+                  selectionHandleColor: primaryFontColor,
+                ),
                 fontFamily: 'SeoulHangang',
                 textTheme: ThemeData.light().textTheme.apply(
                       bodyColor: primaryFontColor,

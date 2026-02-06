@@ -4,12 +4,17 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sodamham/common/color.dart';
 import 'package:sodamham/common/view/notebook_painter.dart';
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:url_launcher/url_launcher.dart';
 
 class DiaryDetailScreen extends StatefulWidget {
   final String imagePath;
   final String content;
   final String date;
   final String author;
+  final String? weather;
+  final String? mood;
 
   const DiaryDetailScreen({
     super.key,
@@ -17,6 +22,8 @@ class DiaryDetailScreen extends StatefulWidget {
     required this.content,
     required this.date,
     required this.author,
+    this.weather,
+    this.mood,
   });
 
   @override
@@ -29,10 +36,8 @@ class _DiaryDetailScreenState extends State<DiaryDetailScreen> {
   late String _content;
   late String _dateStr; // Use String for date as passed from GroupScreen
   late String _author;
-
-  // Dummy static data for weather/mood since GroupScreen doesn't pass it yet
-  final String _weather = 'sunny';
-  final String _mood = 'happy';
+  late String _weather;
+  late String _mood;
 
   int _currentImageIndex = 0;
 
@@ -45,6 +50,8 @@ class _DiaryDetailScreenState extends State<DiaryDetailScreen> {
     _content = widget.content;
     _dateStr = widget.date;
     _author = widget.author;
+    _weather = widget.weather ?? 'sunny';
+    _mood = widget.mood ?? 'happy';
   }
 
   @override
@@ -182,14 +189,9 @@ class _DiaryDetailScreenState extends State<DiaryDetailScreen> {
                   constraints: BoxConstraints(minHeight: 300.h),
                   width: double.infinity,
                   padding: EdgeInsets.symmetric(horizontal: 16.w),
-                  child: Text(
-                    _content,
-                    style: TextStyle(
-                      fontFamily: 'SeoulHangang',
-                      fontSize: 14.sp,
-                      color: primaryFontColor,
-                      height: 2.0,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: _buildContentWidgets(),
                   ),
                 ),
               ),
@@ -208,9 +210,9 @@ class _DiaryDetailScreenState extends State<DiaryDetailScreen> {
       case 'cloud':
         return Icons.cloud_outlined;
       case 'rain':
-        return Icons.water_drop_outlined;
+        return Icons.umbrella_outlined; // Matches Create Screen
       case 'snow':
-        return Icons.ac_unit_outlined;
+        return Icons.ac_unit; // Matches Create Screen
       default:
         return Icons.wb_sunny_outlined;
     }
@@ -223,12 +225,228 @@ class _DiaryDetailScreenState extends State<DiaryDetailScreen> {
       case 'neutral':
         return Icons.sentiment_neutral_outlined;
       case 'sad':
-        return Icons.sentiment_dissatisfied_outlined;
+        return Icons.sentiment_dissatisfied; // Filled (Matches Create Screen)
       case 'angry':
-        return Icons.sentiment_very_dissatisfied_outlined;
+        return Icons.sentiment_very_dissatisfied; // Matches Create Screen
       default:
         return Icons.sentiment_satisfied_alt_outlined;
     }
+  }
+
+  List<Widget> _buildContentWidgets() {
+    final List<Widget> widgets = [];
+    // Updated regex to consume optional leading/trailing newlines around the tag
+    final RegExp ytBlockRegex =
+        RegExp(r'\n?\[YouTube: (https?:\/\/[^\]]+)\]\n?');
+
+    // Split content by YouTube blocks
+    final matches = ytBlockRegex.allMatches(_content);
+
+    int lastMatchEnd = 0;
+
+    for (var match in matches) {
+      // 1. Add text before the match
+      if (match.start > lastMatchEnd) {
+        final textSegment = _content.substring(lastMatchEnd, match.start);
+        if (textSegment.trim().isNotEmpty) {
+          widgets.add(Text(
+            textSegment,
+            style: TextStyle(
+              fontFamily: 'SeoulHangang',
+              fontSize: 14.sp,
+              color: primaryFontColor,
+              height: 2.0,
+            ),
+          ));
+        }
+      }
+
+      // 2. Add YouTube Widget
+      final url = match.group(1);
+      if (url != null) {
+        widgets.add(_YoutubeEmbedWidget(url: url));
+      }
+
+      lastMatchEnd = match.end;
+    }
+
+    // 3. Add remaining text
+    if (lastMatchEnd < _content.length) {
+      final remainingText = _content.substring(lastMatchEnd);
+      if (remainingText.trim().isNotEmpty) {
+        widgets.add(Text(
+          remainingText,
+          style: TextStyle(
+            fontFamily: 'SeoulHangang',
+            fontSize: 14.sp,
+            color: primaryFontColor,
+            height: 2.0,
+          ),
+        ));
+      }
+    }
+
+    // If empty (e.g. only whitespace), add empty text to prevent layout collapse
+    if (widgets.isEmpty) {
+      widgets.add(Text(
+        _content,
+        style: TextStyle(
+          fontFamily: 'SeoulHangang',
+          fontSize: 14.sp,
+          color: primaryFontColor,
+          height: 2.0,
+        ),
+      ));
+    }
+
+    return widgets;
+  }
+}
+
+class _YoutubeEmbedWidget extends StatefulWidget {
+  final String url;
+
+  const _YoutubeEmbedWidget({required this.url});
+
+  @override
+  State<_YoutubeEmbedWidget> createState() => _YoutubeEmbedWidgetState();
+}
+
+class _YoutubeEmbedWidgetState extends State<_YoutubeEmbedWidget> {
+  String? _title;
+  String? _author;
+  String? _thumbnailUrl;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchMetadata();
+  }
+
+  Future<void> _fetchMetadata() async {
+    try {
+      // Extract Video ID for Thumbnail
+      final RegExp idRegex = RegExp(
+        r'(?:v=|\/)([0-9A-Za-z_-]{11}).*',
+        caseSensitive: false,
+      );
+      final match = idRegex.firstMatch(widget.url);
+      if (match != null) {
+        final videoId = match.group(1);
+        _thumbnailUrl = 'https://img.youtube.com/vi/$videoId/mqdefault.jpg';
+      }
+
+      // Fetch Title/Author via oEmbed
+      final response = await http.get(Uri.parse(
+          'https://www.youtube.com/oembed?url=${widget.url}&format=json'));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (mounted) {
+          setState(() {
+            _title = data['title'];
+            _author = data['author_name'];
+            _isLoading = false;
+          });
+        }
+      } else {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () async {
+        final uri = Uri.parse(widget.url);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri);
+        }
+      },
+      child: Container(
+        margin: EdgeInsets.symmetric(vertical: 14.sp),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(color: const Color(0xffE6E6E6)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 5,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Thumbnail
+            ClipRRect(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(12.r),
+                bottomLeft: Radius.circular(12.r),
+              ),
+              child: _thumbnailUrl != null
+                  ? Image.network(
+                      _thumbnailUrl!,
+                      width: 120.w,
+                      height: 90.h,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: 120.w,
+                        height: 90.h,
+                        color: Colors.grey[300],
+                        child: Icon(Icons.broken_image, color: Colors.grey),
+                      ),
+                    )
+                  : Container(
+                      width: 120.w,
+                      height: 90.h,
+                      color: Colors.grey[200],
+                      child: Icon(Icons.ondemand_video, color: Colors.grey),
+                    ),
+            ),
+            // Info
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.all(12.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _title ?? 'YouTube Video',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'SeoulHangang',
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.bold,
+                        color: primaryFontColor,
+                      ),
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      _author ?? widget.url,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'SeoulHangang',
+                        fontSize: 12.sp,
+                        color: const Color(0xff999999),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

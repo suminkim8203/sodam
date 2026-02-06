@@ -150,11 +150,15 @@ class _GroupContentState extends State<_GroupContent> {
         _posts.insert(
           0,
           _PostData(
-            imagePath: result['image'] ??
-                'asset/image/alexander-lunyov-jdBFglNgYKc-unsplash.jpg',
-            date: '오늘', // 실제 날짜 로직은 생략
+            imagePath: result['images'] != null &&
+                    (result['images'] as List).isNotEmpty
+                ? (result['images'] as List)[0]
+                : 'asset/image/alexander-lunyov-jdBFglNgYKc-unsplash.jpg',
+            date: result['date'] ?? '오늘',
             author: '나',
             content: result['content'] ?? '',
+            weather: result['weather'],
+            mood: result['mood'],
           ),
         );
       });
@@ -322,11 +326,16 @@ class _PostData {
   final String author;
   final String content;
 
+  final String? weather;
+  final String? mood;
+
   _PostData({
     required this.imagePath,
     required this.date,
     required this.author,
     required this.content,
+    this.weather,
+    this.mood,
   });
 }
 
@@ -547,6 +556,8 @@ class _MonthlyGalleryList extends StatelessWidget {
                       date: post.date,
                       author: post.author,
                       content: post.content,
+                      weather: post.weather,
+                      mood: post.mood,
                     );
                   },
                 ),
@@ -566,12 +577,16 @@ class _GalleryGridItem extends StatefulWidget {
   final String date;
   final String author;
   final String content;
+  final String? weather;
+  final String? mood;
 
   const _GalleryGridItem({
     required this.imagePath,
     required this.date,
     required this.author,
     required this.content,
+    this.weather,
+    this.mood,
   });
 
   @override
@@ -618,6 +633,8 @@ class _GalleryGridItemState extends State<_GalleryGridItem> {
             content: widget.content,
             date: widget.date,
             author: widget.author,
+            weather: widget.weather,
+            mood: widget.mood,
           ),
         ),
       );
