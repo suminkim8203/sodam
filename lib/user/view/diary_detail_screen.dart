@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:sodamham/user/view/diary_create_screen.dart';
 
 class DiaryDetailScreen extends StatefulWidget {
   final String imagePath;
@@ -15,6 +16,7 @@ class DiaryDetailScreen extends StatefulWidget {
   final String author;
   final String? weather;
   final String? mood;
+  final bool isBookmarked;
 
   const DiaryDetailScreen({
     super.key,
@@ -24,6 +26,7 @@ class DiaryDetailScreen extends StatefulWidget {
     required this.author,
     this.weather,
     this.mood,
+    this.isBookmarked = false,
   });
 
   @override
@@ -40,167 +43,324 @@ class _DiaryDetailScreenState extends State<DiaryDetailScreen> {
   late String _mood;
 
   int _currentImageIndex = 0;
+  late bool _isBookmarked;
 
   @override
   void initState() {
     super.initState();
     // Initialize with passed data
-    _images = [widget.imagePath]; // List containing the single image
-    // We could add more dummy images if needed, but 'content matching logic' implies 1:1
+    _images = [widget.imagePath];
     _content = widget.content;
     _dateStr = widget.date;
     _author = widget.author;
     _weather = widget.weather ?? 'sunny';
     _mood = widget.mood ?? 'happy';
+    _isBookmarked = widget.isBookmarked;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xffFCFCFC),
-      appBar: AppBar(
-        backgroundColor: const Color(0xffFCFCFC),
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: false,
-        titleSpacing: 0,
-        automaticallyImplyLeading: false,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: primaryFontColor),
-          onPressed: () {
-            Navigator.pop(context);
+  void _toggleBookmark() {
+    setState(() {
+      _isBookmarked = !_isBookmarked;
+    });
+  }
+
+  void _handleEdit() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DiaryCreateScreen(
+          initialData: {
+            'content': _content,
+            'images': _images,
+            'date': _dateStr,
+            'author': _author,
+            'weather': _weather,
+            'mood': _mood,
           },
         ),
-        title: Text(
-          '소담함',
-          style: TextStyle(
-            fontFamily: 'HambakSnow',
-            fontWeight: FontWeight.bold,
-            fontSize: 20.sp,
-            color: primaryFontColor,
-          ),
-        ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const ClampingScrollPhysics(),
+    );
+
+    if (result != null && result is Map<String, dynamic>) {
+      // Immediately pop back to GroupScreen with updated data
+      if (!mounted) return;
+      Navigator.pop(context, result);
+    }
+  }
+
+  void _handleDelete() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: const Color(0xffF9F9F9),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10.r),
+          side: const BorderSide(color: Color(0xffE9D5CC), width: 1.0),
+        ),
+        insetPadding: EdgeInsets.zero,
+        child: SizedBox(
+          width: 260.w,
+          height: 142.h,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // 1. Header (Above Image)
-              SizedBox(height: 30.h),
-              _DetailHeader(author: _author), // Pass author name
-
-              SizedBox(height: 10.h),
-
-              // 2. Image Carousel with Indicators
-              Stack(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    height: 330.h,
-                    color: const Color(0xffF0EAE6),
-                    child: PageView.builder(
-                      itemCount: _images.length,
-                      onPageChanged: (index) {
-                        setState(() {
-                          _currentImageIndex = index;
-                        });
-                      },
-                      itemBuilder: (context, index) {
-                        return Image.asset(
-                          _images[index],
-                          fit: BoxFit.cover,
-                        );
-                      },
-                    ),
-                  ),
-
-                  // Page Indicators (Bottom of Image)
-                  if (_images.length > 1)
-                    Positioned(
-                      bottom: 12.h,
-                      left: 0,
-                      right: 0,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(_images.length, (index) {
-                          return Container(
-                            margin: EdgeInsets.symmetric(horizontal: 3.w),
-                            width: 6.w,
-                            height: 6.w,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: _currentImageIndex == index
-                                  ? Colors.white
-                                  : Colors.white.withOpacity(0.5),
-                              border: Border.all(
-                                color: Colors.transparent,
-                              ),
-                            ),
-                          );
-                        }),
-                      ),
-                    ),
-                ],
-              ),
-
-              SizedBox(height: 18.h),
-
-              // 3. Info Row (Date, Weather, Mood)
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w),
-                child: Row(
-                  children: [
-                    Text(
-                      _dateStr, // Display passed date string directly
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 10.h),
+                  child: Center(
+                    child: Text(
+                      '정말 삭제하시겠습니까?',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: 'SeoulHangang',
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 14.sp,
                         color: primaryFontColor,
+                        height: 1.4,
+                        fontWeight: FontWeight.normal,
                       ),
                     ),
-                    const Spacer(),
-                    Icon(
-                      _getWeatherIcon(_weather),
-                      size: 20.sp,
-                      color: const Color(0xff999999),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.only(bottom: 20.h, left: 35.w, right: 35.w),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        width: 80.w,
+                        height: 28.h,
+                        decoration: BoxDecoration(
+                          color: const Color(0xffEEE9E5),
+                          borderRadius: BorderRadius.circular(8.r),
+                          border: Border.all(
+                              color: const Color(0xffE9D5CC), width: 1.0),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '취소',
+                          style: TextStyle(
+                            fontFamily: 'SeoulHangang',
+                            fontSize: 12.sp,
+                            color: primaryFontColor,
+                          ),
+                        ),
+                      ),
                     ),
-                    SizedBox(width: 12.w),
-                    Icon(
-                      _getMoodIcon(_mood),
-                      size: 20.sp,
-                      color: const Color(0xff999999),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pop(context); // Close Dialog
+                        Navigator.pop(context, 'delete'); // Pop Screen
+                      },
+                      child: Container(
+                        width: 80.w,
+                        height: 28.h,
+                        decoration: BoxDecoration(
+                          color: const Color(0xffE9D5CC),
+                          borderRadius: BorderRadius.circular(8.r),
+                          border: Border.all(
+                              color: const Color(0xffE9D5CC), width: 1.0),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '삭제',
+                          style: TextStyle(
+                            fontFamily: 'SeoulHangang',
+                            fontSize: 12.sp,
+                            color: primaryFontColor,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
-
-              SizedBox(height: 24.h),
-
-              // 4. Content Body
-              CustomPaint(
-                painter: NotebookPaperPainter(
-                  lineHeight: 28.sp,
-                  lineColor: const Color(0xffE0E0E0),
-                ),
-                child: Container(
-                  constraints: BoxConstraints(minHeight: 300.h),
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(horizontal: 16.w),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: _buildContentWidgets(),
-                  ),
-                ),
-              ),
-              SizedBox(height: 50.h),
             ],
           ),
         ),
       ),
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          Navigator.pop(context, {
+            'content': _content,
+            'images': _images,
+            'date': _dateStr,
+            'author': _author,
+            'weather': _weather,
+            'mood': _mood,
+            'isBookmarked': _isBookmarked,
+          });
+        },
+        child: Scaffold(
+          backgroundColor: const Color(0xffFCFCFC),
+          appBar: AppBar(
+            backgroundColor: const Color(0xffFCFCFC),
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            centerTitle: false,
+            titleSpacing: 0,
+            automaticallyImplyLeading: false,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back_ios_new, color: primaryFontColor),
+              onPressed: () {
+                Navigator.pop(context, {
+                  'content': _content,
+                  'images': _images,
+                  'date': _dateStr,
+                  'author': _author,
+                  'weather': _weather,
+                  'mood': _mood,
+                  'isBookmarked': _isBookmarked,
+                });
+              },
+            ),
+            title: Text(
+              '소담함',
+              style: TextStyle(
+                fontFamily: 'HambakSnow',
+                fontWeight: FontWeight.bold,
+                fontSize: 20.sp,
+                color: primaryFontColor,
+              ),
+            ),
+            actions: const [], // Removed actions from AppBar
+          ),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: 20.h),
+                  _DetailHeader(
+                    author: _author,
+                    isBookmarked: _isBookmarked,
+                    onBookmarkToggle: _toggleBookmark,
+                    onEdit: _handleEdit,
+                    onDelete: _handleDelete,
+                  ),
+
+                  SizedBox(height: 10.h),
+
+                  // 2. Image Carousel with Indicators
+                  Stack(
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        height: 330.h,
+                        color: const Color(0xffF0EAE6),
+                        child: PageView.builder(
+                          itemCount: _images.length,
+                          onPageChanged: (index) {
+                            setState(() {
+                              _currentImageIndex = index;
+                            });
+                          },
+                          itemBuilder: (context, index) {
+                            return Image.asset(
+                              _images[index],
+                              fit: BoxFit.cover,
+                            );
+                          },
+                        ),
+                      ),
+
+                      // Page Indicators (Bottom of Image)
+                      if (_images.length > 1)
+                        Positioned(
+                          bottom: 12.h,
+                          left: 0,
+                          right: 0,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(_images.length, (index) {
+                              return Container(
+                                margin: EdgeInsets.symmetric(horizontal: 3.w),
+                                width: 6.w,
+                                height: 6.w,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: _currentImageIndex == index
+                                      ? Colors.white
+                                      : Colors.white.withOpacity(0.5),
+                                  border: Border.all(
+                                    color: Colors.transparent,
+                                  ),
+                                ),
+                              );
+                            }),
+                          ),
+                        ),
+                    ],
+                  ),
+
+                  SizedBox(height: 18.h),
+
+                  // 3. Info Row (Date, Weather, Mood)
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.w),
+                    child: Row(
+                      children: [
+                        Text(
+                          _dateStr, // Display passed date string directly
+                          style: TextStyle(
+                            fontFamily: 'SeoulHangang',
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.bold,
+                            color: primaryFontColor,
+                          ),
+                        ),
+                        const Spacer(),
+                        Icon(
+                          _getWeatherIcon(_weather),
+                          size: 20.sp,
+                          color: const Color(0xff999999),
+                        ),
+                        SizedBox(width: 12.w),
+                        Icon(
+                          _getMoodIcon(_mood),
+                          size: 20.sp,
+                          color: const Color(0xff999999),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(height: 24.h),
+
+                  // 4. Content Body
+                  CustomPaint(
+                    painter: NotebookPaperPainter(
+                      lineHeight: 28.sp,
+                      lineColor: const Color(0xffE0E0E0),
+                    ),
+                    child: Container(
+                      constraints: BoxConstraints(minHeight: 300.h),
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ..._buildContentWidgets(),
+                          SizedBox(height: 50.h),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ));
   }
 
   IconData _getWeatherIcon(String weather) {
@@ -452,13 +612,25 @@ class _YoutubeEmbedWidgetState extends State<_YoutubeEmbedWidget> {
 
 class _DetailHeader extends StatelessWidget {
   final String author;
+  final bool isBookmarked;
+  final VoidCallback onBookmarkToggle;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
-  const _DetailHeader({required this.author});
+  const _DetailHeader({
+    required this.author,
+    required this.isBookmarked,
+    required this.onBookmarkToggle,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final isAuthor = author == '김수민' || author == '나';
+
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.w),
+      padding: EdgeInsets.symmetric(horizontal: 15.w),
       child: Row(children: [
         Container(
           width: 30.w,
@@ -471,38 +643,101 @@ class _DetailHeader extends StatelessWidget {
         ),
         SizedBox(width: 10.w),
         Text(
-          author, // Use passed author
+          author,
           style: TextStyle(
-            color: primaryFontColor, // Dark color (PostItem style)
+            color: primaryFontColor,
             fontFamily: 'SeoulHangang',
-            fontSize: 12.sp, // Match PostItem size
+            fontSize: 12.sp,
             fontWeight: FontWeight.w500,
           ),
         ),
         const Spacer(),
         // Bookmark
+        // Pushes to right when no menu (Spacer pushes it)
         Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: () {},
-            child: SvgPicture.asset(
-              'asset/icon/book_mark.svg',
-              colorFilter: ColorFilter.mode(primaryFontColor, BlendMode.srcIn),
+            onTap: onBookmarkToggle,
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: EdgeInsets.all(8.w),
+              child: SvgPicture.asset(
+                isBookmarked
+                    ? 'asset/icon/book_mark_filled.svg'
+                    : 'asset/icon/book_mark.svg',
+                width: 18.w,
+                height: 18.w,
+                colorFilter: ColorFilter.mode(
+                  primaryFontColor,
+                  BlendMode.srcIn,
+                ),
+              ),
             ),
           ),
         ),
-        SizedBox(width: 20.w),
-        // Kebab Menu
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () {},
-            child: SvgPicture.asset(
-              'asset/icon/kebab.svg',
-              colorFilter: ColorFilter.mode(primaryFontColor, BlendMode.srcIn),
+        // Kebab Menu - Only for Author
+        if (isAuthor) ...[
+          SizedBox(width: 4.w), // Small gap between Bookmark and Menu
+
+          Theme(
+            data: Theme.of(context).copyWith(
+              popupMenuTheme: PopupMenuThemeData(
+                color: const Color(0xffF9F9F9),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.r),
+                  side: const BorderSide(color: Color(0xffE9D5CC)),
+                ),
+                textStyle: TextStyle(
+                  fontFamily: 'SeoulHangang',
+                  fontSize: 14.sp,
+                  color: primaryFontColor,
+                ),
+              ),
+            ),
+            child: PopupMenuButton<String>(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              offset: const Offset(0, 40), // Adjust dropdown position
+              onSelected: (value) {
+                if (value == 'edit') {
+                  onEdit();
+                } else if (value == 'delete') {
+                  onDelete();
+                }
+              },
+              itemBuilder: (BuildContext context) {
+                return [
+                  PopupMenuItem<String>(
+                    height: 32.h,
+                    value: 'edit',
+                    child: Center(child: Text('수정하기')),
+                  ),
+                  const PopupMenuDivider(height: 1), // Optional divider?
+                  PopupMenuItem<String>(
+                    height: 32.h,
+                    value: 'delete',
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                          top: 6.h,
+                          bottom: 2.h), // Push text down visually more
+                      child: Center(child: Text('삭제하기')),
+                    ),
+                  ),
+                ];
+              },
+              child: Padding(
+                padding: EdgeInsets.all(8.w), // Increase touch area
+                child: SvgPicture.asset(
+                  'asset/icon/kebab.svg',
+                  width: 18.w,
+                  height: 18.w,
+                  colorFilter:
+                      ColorFilter.mode(primaryFontColor, BlendMode.srcIn),
+                ),
+              ),
             ),
           ),
-        ),
+        ],
       ]),
     );
   }

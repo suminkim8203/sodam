@@ -186,6 +186,30 @@ class _GroupContentState extends State<_GroupContent> {
                 posts: _posts,
                 isLoading: _isLoading, // 로딩 상태 전달
                 onWrite: _navigateToCreateDiary, // 콜백 전달
+                onDelete: (post) {
+                  setState(() {
+                    _posts.remove(post);
+                  });
+                },
+                onUpdate: (post, updatedData) {
+                  setState(() {
+                    final index = _posts.indexOf(post);
+                    if (index != -1) {
+                      final images = updatedData['images'] as List;
+                      _posts[index] = _PostData(
+                        imagePath:
+                            images.isNotEmpty ? images.first : post.imagePath,
+                        date: updatedData['date'],
+                        author: post.author,
+                        content: updatedData['content'],
+                        weather: updatedData['weather'],
+                        mood: updatedData['mood'],
+                        isBookmarked:
+                            updatedData['isBookmarked'] ?? post.isBookmarked,
+                      );
+                    }
+                  });
+                },
               ),
             ),
           ],
@@ -328,6 +352,7 @@ class _PostData {
 
   final String? weather;
   final String? mood;
+  final bool isBookmarked;
 
   _PostData({
     required this.imagePath,
@@ -336,6 +361,7 @@ class _PostData {
     required this.content,
     this.weather,
     this.mood,
+    this.isBookmarked = false,
   });
 }
 
@@ -483,12 +509,16 @@ class _GroupInfoSection extends StatelessWidget {
 class _MonthlyGalleryList extends StatelessWidget {
   final List<_PostData> posts;
   final bool isLoading;
-  final VoidCallback onWrite; // 콜백 추가
+  final VoidCallback onWrite;
+  final Function(_PostData) onDelete;
+  final Function(_PostData, Map<String, dynamic>) onUpdate;
 
   const _MonthlyGalleryList({
     required this.posts,
     required this.isLoading,
     required this.onWrite,
+    required this.onDelete,
+    required this.onUpdate,
   });
 
   @override
@@ -558,6 +588,9 @@ class _MonthlyGalleryList extends StatelessWidget {
                       content: post.content,
                       weather: post.weather,
                       mood: post.mood,
+                      isBookmarked: post.isBookmarked,
+                      onDelete: () => onDelete(post),
+                      onUpdate: (updatedData) => onUpdate(post, updatedData),
                     );
                   },
                 ),
@@ -579,6 +612,9 @@ class _GalleryGridItem extends StatefulWidget {
   final String content;
   final String? weather;
   final String? mood;
+  final bool isBookmarked;
+  final VoidCallback? onDelete;
+  final Function(Map<String, dynamic>)? onUpdate;
 
   const _GalleryGridItem({
     required this.imagePath,
@@ -587,6 +623,9 @@ class _GalleryGridItem extends StatefulWidget {
     required this.content,
     this.weather,
     this.mood,
+    this.isBookmarked = false,
+    this.onDelete,
+    this.onUpdate,
   });
 
   @override
@@ -621,11 +660,11 @@ class _GalleryGridItemState extends State<_GalleryGridItem> {
     });
   }
 
-  void _onTapUp(TapUpDetails details) {
+  void _onTapUp(TapUpDetails details) async {
     if (_holdTimer != null && _holdTimer!.isActive) {
       // Short tap: Cancel timer and navigate
       _cancelTimer();
-      Navigator.push(
+      final result = await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => DiaryDetailScreen(
@@ -635,9 +674,16 @@ class _GalleryGridItemState extends State<_GalleryGridItem> {
             author: widget.author,
             weather: widget.weather,
             mood: widget.mood,
+            isBookmarked: widget.isBookmarked,
           ),
         ),
       );
+
+      if (result == 'delete') {
+        widget.onDelete?.call();
+      } else if (result != null && result is Map<String, dynamic>) {
+        widget.onUpdate?.call(result);
+      }
     } else {
       // Long press: Just close overlay
       _cancelTimer();

@@ -67,7 +67,9 @@ class DiaryBlock {
 }
 
 class DiaryCreateScreen extends StatefulWidget {
-  const DiaryCreateScreen({super.key});
+  final Map<String, dynamic>? initialData;
+
+  const DiaryCreateScreen({super.key, this.initialData});
 
   @override
   State<DiaryCreateScreen> createState() => _DiaryCreateScreenState();
@@ -95,10 +97,110 @@ class _DiaryCreateScreenState extends State<DiaryCreateScreen> {
   void initState() {
     super.initState();
 
-    // 화면이 그려진 후 임시저장 체크
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkDraft();
-    });
+    if (widget.initialData != null) {
+      _initializeFromData(widget.initialData!);
+    } else {
+      // 화면이 그려진 후 임시저장 체크
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkDraft();
+      });
+    }
+  }
+
+  void _initializeFromData(Map<String, dynamic> data) {
+    // 1. Set Header Data
+    try {
+      if (data['date'] != null) {
+        // Remove day name (E) if present for parsing, or match format
+        // Saved format: 'yyyy. MM. dd' (Line 560)
+        // Check if map has raw object or string
+        // Assuming string based on navigator passing
+        _selectedDate = DateFormat('yyyy. MM. dd').parse(data['date']);
+      }
+    } catch (e) {
+      _selectedDate = DateTime.now();
+      debugPrint('Date parse error: $e');
+    }
+    _selectedWeather = data['weather'] ?? 'sunny';
+    _selectedMood = data['mood'] ?? 'happy';
+    _selectedImages = List<String>.from(data['images'] ?? []);
+    if (_selectedImages.isNotEmpty) _currentImageIndex = 0;
+
+    // 2. Parse Content
+    final content = data['content'] as String? ?? "";
+    _blocks = _parseContentToBlocks(content);
+    if (_blocks.isEmpty) _addInitialBlock();
+
+    // Add listeners to text blocks
+    for (var block in _blocks) {
+      if (block.type == BlockType.text) {
+        block.textController?.addListener(() => _onTextChanged(block));
+      }
+    }
+  }
+
+  List<DiaryBlock> _parseContentToBlocks(String content) {
+    final List<DiaryBlock> blocks = [];
+    // Regex to match [YouTube: URL]
+    final RegExp ytBlockRegex = RegExp(r'\[YouTube: (https?:\/\/[^\]]+)\]');
+
+    final matches = ytBlockRegex.allMatches(content);
+    int lastMatchEnd = 0;
+
+    for (var match in matches) {
+      // Text before match
+      if (match.start > lastMatchEnd) {
+        final text = content.substring(lastMatchEnd, match.start).trim();
+        if (text.isNotEmpty) {
+          blocks.add(DiaryBlock(
+            id: DateTime.now().millisecondsSinceEpoch.toString() +
+                "_${blocks.length}",
+            type: BlockType.text,
+            textController: TextEditingController(text: text),
+            focusNode: FocusNode(),
+          ));
+        }
+      }
+
+      // YouTube match
+      final url = match.group(1)!;
+      final videoId = _extractVideoId(url);
+      final ytBlock = DiaryBlock(
+        id: DateTime.now().millisecondsSinceEpoch.toString() +
+            "_yt_${blocks.length}",
+        type: BlockType.youtube,
+        youtubeUrl: url,
+        videoId: videoId,
+      );
+      _fetchYoutubeData(ytBlock);
+      blocks.add(ytBlock);
+
+      lastMatchEnd = match.end;
+    }
+
+    // Remaining text
+    if (lastMatchEnd < content.length) {
+      final text = content.substring(lastMatchEnd).trim();
+      if (text.isNotEmpty) {
+        blocks.add(DiaryBlock(
+          id: DateTime.now().millisecondsSinceEpoch.toString() + "_end",
+          type: BlockType.text,
+          textController: TextEditingController(text: text),
+          focusNode: FocusNode(),
+        ));
+      }
+    }
+
+    return blocks;
+  }
+
+  String? _extractVideoId(String url) {
+    final RegExp youtubeRegex = RegExp(
+      r'(https?:\/\/)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)\/(watch\?v=|embed\/|v\/|shorts\/|.+\?v=)?([^&=%\?]{11})',
+      caseSensitive: false,
+    );
+    final match = youtubeRegex.firstMatch(url);
+    return match?.group(6);
   }
 
   void _addInitialBlock() {
@@ -543,13 +645,13 @@ class _DiaryCreateScreenState extends State<DiaryCreateScreen> {
             Padding(
               padding: EdgeInsets.only(right: 20.w),
               child: GestureDetector(
-                onTap: () {
+                onTap: () async {
                   // Build text content from blocks for compatibility with detail screen
                   String fullContent = _blocks.map((b) {
                     if (b.type == BlockType.text)
                       return b.textController?.text ?? "";
                     if (b.type == BlockType.youtube)
-                      return "\n[YouTube: ${b.youtubeUrl}]\n";
+                      return "[YouTube: ${b.youtubeUrl}]";
                     return "";
                   }).join(
                       "\n"); // Join with newline to preserve paragraph structure
@@ -562,6 +664,9 @@ class _DiaryCreateScreenState extends State<DiaryCreateScreen> {
                     'weather': _selectedWeather,
                     'mood': _selectedMood,
                   };
+                  // Clear draft on successful save/edit
+                  await _clearDraft();
+                  if (!context.mounted) return;
                   Navigator.pop(context, postData);
                 },
                 child: Center(
