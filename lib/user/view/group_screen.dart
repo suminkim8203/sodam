@@ -9,19 +9,50 @@ import 'package:sodamham/user/view/diary_detail_screen.dart';
 import 'package:shimmer/shimmer.dart';
 
 class GroupScreen extends StatelessWidget {
-  const GroupScreen({super.key});
+  final String groupName;
+  final String groupDescription;
+  final int membersCount;
+  final String coverImage;
+  final List<PostData> initialPosts;
+
+  const GroupScreen({
+    super.key,
+    required this.groupName,
+    required this.groupDescription,
+    required this.membersCount,
+    required this.coverImage,
+    required this.initialPosts,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xffFCFCFC),
-      body: const _GroupContent(),
+      body: _GroupContent(
+        groupName: groupName,
+        groupDescription: groupDescription,
+        membersCount: membersCount,
+        coverImage: coverImage,
+        initialPosts: initialPosts,
+      ),
     );
   }
 }
 
 class _GroupContent extends StatefulWidget {
-  const _GroupContent();
+  final String groupName;
+  final String groupDescription;
+  final int membersCount;
+  final String coverImage;
+  final List<PostData> initialPosts;
+
+  const _GroupContent({
+    required this.groupName,
+    required this.groupDescription,
+    required this.membersCount,
+    required this.coverImage,
+    required this.initialPosts,
+  });
 
   @override
   State<_GroupContent> createState() => _GroupContentState();
@@ -48,38 +79,7 @@ class _GroupContentState extends State<_GroupContent> {
   ];
 
   // 갤러리 데이터 상태 관리
-  final List<_PostData> _posts = [
-    _PostData(
-      imagePath: 'asset/image/alexander-lunyov-jdBFglNgYKc-unsplash.jpg',
-      date: '12.02',
-      author: '김수민',
-      content: '오늘은 눈이 왔다 행복했다. 내일도 눈이 왔으면 좋겠다.',
-    ),
-    _PostData(
-      imagePath: 'asset/image/chris-weiher-jgvEtA9yhDI-unsplash.jpg',
-      date: '12.01',
-      author: '이준호',
-      content: '새벽 공기가 참 좋다.',
-    ),
-    _PostData(
-      imagePath: 'asset/image/rafael-as-martins-3sGqa8YJIXg-unsplash.jpg',
-      date: '11.30',
-      author: '이민엽',
-      content: '책 읽기 좋은 날씨다.',
-    ),
-    _PostData(
-      imagePath: 'asset/image/edgar-X3ZDEajyqVs-unsplash.jpg',
-      date: '11.29',
-      author: '박지민',
-      content: '필름 카메라 감성.',
-    ),
-    _PostData(
-      imagePath: 'asset/image/ella-arie-_CfSrr0D2hE-unsplash.jpg',
-      date: '11.28',
-      author: '최현우',
-      content: '커피 한 잔의 여유.',
-    ),
-  ];
+  late List<PostData> _posts;
 
   double _dismissProgress = 0.0; // 드래그 진행률 추적
 
@@ -94,6 +94,7 @@ class _GroupContentState extends State<_GroupContent> {
   @override
   void initState() {
     super.initState();
+    _posts = List.from(widget.initialPosts);
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
     _loadData(); // 데이터 로딩 시뮬레이션
@@ -149,7 +150,7 @@ class _GroupContentState extends State<_GroupContent> {
       setState(() {
         _posts.insert(
           0,
-          _PostData(
+          PostData(
             imagePath: result['images'] != null &&
                     (result['images'] as List).isNotEmpty
                 ? (result['images'] as List)[0]
@@ -173,11 +174,15 @@ class _GroupContentState extends State<_GroupContent> {
           controller: _scrollController,
           physics: const ClampingScrollPhysics(), // 당겨지지 않도록 Clamping 처리
           slivers: [
-            const _GroupSliverAppBar(),
+            _GroupSliverAppBar(coverImage: widget.coverImage),
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.only(left: 24.w, right: 16.w),
-                child: const _GroupInfoSection(),
+                child: _GroupInfoSection(
+                  groupName: widget.groupName,
+                  groupDescription: widget.groupDescription,
+                  membersCount: widget.membersCount,
+                ),
               ),
             ),
             SliverPadding(
@@ -196,7 +201,7 @@ class _GroupContentState extends State<_GroupContent> {
                     final index = _posts.indexOf(post);
                     if (index != -1) {
                       final images = updatedData['images'] as List;
-                      _posts[index] = _PostData(
+                      _posts[index] = PostData(
                         imagePath:
                             images.isNotEmpty ? images.first : post.imagePath,
                         date: updatedData['date'],
@@ -344,7 +349,7 @@ class _GroupContentState extends State<_GroupContent> {
   }
 }
 
-class _PostData {
+class PostData {
   final String imagePath;
   final String date;
   final String author;
@@ -354,7 +359,7 @@ class _PostData {
   final String? mood;
   final bool isBookmarked;
 
-  _PostData({
+  PostData({
     required this.imagePath,
     required this.date,
     required this.author,
@@ -366,7 +371,8 @@ class _PostData {
 }
 
 class _GroupSliverAppBar extends StatelessWidget {
-  const _GroupSliverAppBar();
+  final String coverImage;
+  const _GroupSliverAppBar({required this.coverImage});
 
   @override
   Widget build(BuildContext context) {
@@ -401,7 +407,7 @@ class _GroupSliverAppBar extends StatelessWidget {
       ],
       flexibleSpace: FlexibleSpaceBar(
         background: Image.asset(
-          'asset/image/alexander-lunyov-jdBFglNgYKc-unsplash.jpg',
+          coverImage,
           fit: BoxFit.cover,
         ),
       ),
@@ -410,7 +416,15 @@ class _GroupSliverAppBar extends StatelessWidget {
 }
 
 class _GroupInfoSection extends StatelessWidget {
-  const _GroupInfoSection();
+  final String groupName;
+  final String groupDescription;
+  final int membersCount;
+
+  const _GroupInfoSection({
+    required this.groupName,
+    required this.groupDescription,
+    required this.membersCount,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -434,7 +448,7 @@ class _GroupInfoSection extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '집단적 독백',
+                  groupName,
                   style: TextStyle(
                     fontFamily: 'HambakSnow',
                     fontSize: 24.sp,
@@ -447,7 +461,7 @@ class _GroupInfoSection extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  '멤버 6',
+                  '멤버 $membersCount',
                   style: TextStyle(
                     fontFamily: 'SeoulHangang',
                     fontSize: 14.sp,
@@ -491,7 +505,7 @@ class _GroupInfoSection extends StatelessWidget {
         Transform.translate(
           offset: Offset(10.w, -3.h), // 강제로 위로 올림 (폰트 패딩 상쇄) 및 좌측 여백
           child: Text(
-            '; 아무거나 하는 모임입니다.',
+            '; $groupDescription',
             style: TextStyle(
               fontFamily: 'SeoulHangang',
               fontSize: 11.5.sp,
@@ -507,11 +521,11 @@ class _GroupInfoSection extends StatelessWidget {
 }
 
 class _MonthlyGalleryList extends StatelessWidget {
-  final List<_PostData> posts;
+  final List<PostData> posts;
   final bool isLoading;
   final VoidCallback onWrite;
-  final Function(_PostData) onDelete;
-  final Function(_PostData, Map<String, dynamic>) onUpdate;
+  final Function(PostData) onDelete;
+  final Function(PostData, Map<String, dynamic>) onUpdate;
 
   const _MonthlyGalleryList({
     required this.posts,
@@ -523,22 +537,91 @@ class _MonthlyGalleryList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 예시를 위해 모든 포스트를 '2024년 12월' 섹션 하나에 넣거나,
-    // 데이터가 늘어나면 월별로 그룹핑하는 로직이 필요합니다.
-    // 여기서는 간단히 하나의 월 섹션에 모든 데이터를 보여줍니다.
-    final months = ['2024년 12월'];
+    if (isLoading) {
+      return SliverList(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            return Container(
+              color: const Color(0xffFCFCFC),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: EdgeInsets.only(
+                        left: 12.w, right: 12.w, top: 12.h, bottom: 6.h),
+                    child: Text(
+                      '로딩 중...',
+                      style: TextStyle(
+                        fontFamily: 'SeoulHangang',
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w700,
+                        color: primaryFontColor,
+                      ),
+                    ),
+                  ),
+                  GridView.builder(
+                    padding: EdgeInsets.zero,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 0,
+                      mainAxisSpacing: 0,
+                      childAspectRatio: 1.0,
+                    ),
+                    itemCount: 9,
+                    itemBuilder: (context, gridIndex) =>
+                        const _SkeletonGridItem(),
+                  ),
+                  SizedBox(height: 25.h),
+                ],
+              ),
+            );
+          },
+          childCount: 1,
+        ),
+      );
+    }
+
+    // 그룹핑 로직
+    final Map<String, List<PostData>> groupedPosts = {};
+
+    // 1. 최신순 정렬
+    final sortedPosts = List<PostData>.from(posts)
+      ..sort((a, b) => b.date.compareTo(a.date));
+
+    // 2. 월별 분리
+    for (var post in sortedPosts) {
+      try {
+        final parts = post.date.split('.');
+        if (parts.length >= 2) {
+          final year = parts[0];
+          final month = int.parse(parts[1]).toString(); // '02' -> '2'
+          final key = '$year년 $month월';
+          groupedPosts.putIfAbsent(key, () => []).add(post);
+        } else {
+          groupedPosts.putIfAbsent('기타', () => []).add(post);
+        }
+      } catch (e) {
+        groupedPosts.putIfAbsent('기타', () => []).add(post);
+      }
+    }
+
+    final months = groupedPosts.keys.toList();
 
     return SliverList(
       delegate: SliverChildBuilderDelegate(
         (context, index) {
           final month = months[index];
-          // 각 월별 섹션
+          final monthPosts = groupedPosts[month]!;
+
           return Container(
             color: const Color(0xffFCFCFC),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 월 헤더 (Padding 유지)
+                // 월 헤더
                 Padding(
                   padding: EdgeInsets.only(
                       left: 12.w, right: 12.w, top: 12.h, bottom: 6.h),
@@ -554,9 +637,9 @@ class _MonthlyGalleryList extends StatelessWidget {
                           color: primaryFontColor,
                         ),
                       ),
-                      if (index == 0) // 첫 번째 월에만 편집 아이콘 예시
+                      if (index == 0) // 첫 번째 월에만 편집 아이콘
                         GestureDetector(
-                          onTap: onWrite, // 탭 시 글쓰기 화면으로 이동
+                          onTap: onWrite,
                           child: Icon(Icons.edit,
                               size: 20.sp, color: primaryFontColor),
                         ),
@@ -564,7 +647,7 @@ class _MonthlyGalleryList extends StatelessWidget {
                   ),
                 ),
 
-                // 그리드 (Padding 제거: Full Width)
+                // 그리드
                 GridView.builder(
                   padding: EdgeInsets.zero,
                   shrinkWrap: true,
@@ -575,12 +658,9 @@ class _MonthlyGalleryList extends StatelessWidget {
                     mainAxisSpacing: 0,
                     childAspectRatio: 1.0,
                   ),
-                  itemCount: isLoading ? 9 : posts.length, // 로딩 중이면 9개 스켈레톤
+                  itemCount: monthPosts.length,
                   itemBuilder: (context, gridIndex) {
-                    if (isLoading) {
-                      return const _SkeletonGridItem();
-                    }
-                    final post = posts[gridIndex];
+                    final post = monthPosts[gridIndex];
                     return _GalleryGridItem(
                       imagePath: post.imagePath,
                       date: post.date,
@@ -594,7 +674,7 @@ class _MonthlyGalleryList extends StatelessWidget {
                     );
                   },
                 ),
-                SizedBox(height: 22.h),
+                SizedBox(height: 25.h), // 월별 그리드 사이 간격 25px
               ],
             ),
           );
@@ -720,18 +800,44 @@ class _GalleryGridItemState extends State<_GalleryGridItem> {
       onTapDown: _onTapDown,
       onTapUp: _onTapUp,
       onTapCancel: _onTapCancel,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.grey[300],
-          border: Border.all(
-            color: const Color(0xffF9F9F9),
-            width: 1.0,
+      child: Stack(
+        fit: StackFit.loose,
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              border: Border.all(
+                color: const Color(0xffF9F9F9),
+                width: 1.0,
+              ),
+              image: DecorationImage(
+                image: AssetImage(widget.imagePath),
+                fit: BoxFit.cover,
+              ),
+            ),
           ),
-          image: DecorationImage(
-            image: AssetImage(widget.imagePath),
-            fit: BoxFit.cover,
-          ),
-        ),
+          if (widget.isBookmarked)
+            Positioned(
+              top: 5.h,
+              right: 5.w,
+              child: Stack(
+                children: [
+                  // Border effect using shadows in 4 directions
+                  Icon(
+                    Icons.bookmark,
+                    color: const Color(0xff6C5D53), // Fill color
+                    size: 24.sp, // Size increased by 4 (from 20 to 24)
+                    shadows: const [
+                      Shadow(offset: Offset(-1, -1), color: Color(0xffF9F9F9)),
+                      Shadow(offset: Offset(1, -1), color: Color(0xffF9F9F9)),
+                      Shadow(offset: Offset(1, 1), color: Color(0xffF9F9F9)),
+                      Shadow(offset: Offset(-1, 1), color: Color(0xffF9F9F9)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }

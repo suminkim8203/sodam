@@ -21,15 +21,22 @@ class PostItem extends StatelessWidget {
   const PostItem({
     super.key,
     required this.imagePath,
+    required this.author,
+    required this.groupName,
   });
 
   final String imagePath;
+  final String author;
+  final String groupName;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _Header(),
+        _Header(
+          author: author,
+          groupName: groupName,
+        ),
         SizedBox(height: 10.h),
         Container(
           width: double.infinity,
@@ -52,7 +59,12 @@ class PostItem extends StatelessWidget {
 class _Header extends StatelessWidget {
   const _Header({
     super.key,
+    required this.author,
+    required this.groupName,
   });
+
+  final String author;
+  final String groupName;
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +82,7 @@ class _Header extends StatelessWidget {
         ),
         SizedBox(width: 10.w),
         Text(
-          '김누구',
+          author,
           style: TextStyle(
             color: primaryFontColor,
             fontFamily: 'SeoulHangang',
@@ -80,7 +92,7 @@ class _Header extends StatelessWidget {
         ),
         SizedBox(width: 5.w),
         Text(
-          '토피넛 시그니처 라떼',
+          groupName,
           style: TextStyle(
             color: Color(0xffB1AEAE),
             fontFamily: 'SeoulHangang',

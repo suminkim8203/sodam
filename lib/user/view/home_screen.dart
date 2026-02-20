@@ -356,25 +356,23 @@ class _SlideScreen extends StatefulWidget {
 class _SlideScreenState extends State<_SlideScreen> {
   late final ScrollController _scrollController;
   bool _showScrollToTop = false;
-  bool _isLoading = true; // 초기 로딩 상태
   bool _isMoreLoading = false; // 추가 로딩 상태
-  List<_GroupInfo> _items = []; // 무한 스크롤용 데이터 리스트
+  List<_RecentPostInfo> _items = []; // 무한 스크롤용 데이터 리스트
+  late final List<_RecentPostInfo> _allPosts;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
-    // Data restored for display
-    _items = List.from(_groupSamples);
+
+    // 전체 더미 포스트 로드 후 10개만 먼저 표시
+    _allPosts = _getAllRecentPosts();
+    _items = _allPosts.take(10).toList();
   }
 
-  // _loadData method removed as initial loading state is passed via widget.isLoading
-  // If initial data loading is still needed within _SlideScreenState,
-  // it should be triggered by a change in widget.isLoading or similar.
-
   Future<void> _loadMoreData() async {
-    if (_isMoreLoading) return;
+    if (_isMoreLoading || _items.length >= _allPosts.length) return;
     setState(() {
       _isMoreLoading = true;
     });
@@ -383,8 +381,8 @@ class _SlideScreenState extends State<_SlideScreen> {
 
     if (mounted) {
       setState(() {
-        // 더미 데이터 5개 추가
-        _items.addAll(_groupSamples.take(5));
+        // 더미 데이터 5개 단위 추가
+        _items.addAll(_allPosts.skip(_items.length).take(5));
         _isMoreLoading = false;
       });
     }
@@ -413,7 +411,7 @@ class _SlideScreenState extends State<_SlideScreen> {
     // 무한 스크롤 감지 (바닥에 닿았을 때)
     if (_scrollController.position.pixels >=
             _scrollController.position.maxScrollExtent - 100 &&
-        !_isLoading &&
+        !widget.isLoading &&
         !_isMoreLoading) {
       _loadMoreData();
     }
@@ -477,12 +475,13 @@ class _SlideScreenState extends State<_SlideScreen> {
                       );
                     }
 
-                    final String imagePath =
-                        _items[index % _items.length].imageAsset;
+                    final post = _items[index];
                     return Padding(
                       padding: EdgeInsets.only(bottom: 20.h),
                       child: PostItem(
-                        imagePath: imagePath,
+                        imagePath: post.groupImage,
+                        author: post.author,
+                        groupName: post.groupName,
                       ),
                     );
                   },
@@ -579,13 +578,19 @@ class _SlideHeader extends StatelessWidget {
               if (index == 0) SizedBox(width: 26.w),
               GestureDetector(
                 onTap: () {
-                  if (group.name == '집단적 독백') {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const GroupScreen()),
-                    );
-                  }
+                  final posts = _getDummyPostsByGroupName(group.name);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => GroupScreen(
+                        groupName: group.name,
+                        groupDescription: group.description,
+                        membersCount: 6,
+                        coverImage: group.imageAsset,
+                        initialPosts: posts,
+                      ),
+                    ),
+                  );
                 },
                 child: SizedBox(
                   width: 58.w,
@@ -1048,6 +1053,105 @@ class _PaginationArrow extends StatelessWidget {
   }
 }
 
+List<PostData> _getDummyPostsByGroupName(String name) {
+  final Map<String, List<String>> groupMembers = {
+    '집단적 독백': ['김수민', '이준호', '박지민'],
+    '새벽산책': ['김수민', '최현우', '정아름'],
+    '필름로그': ['김수민', '강동원', '윤보미'],
+    '북클럽 소담': ['김수민', '이민엽', '송강'],
+    '소금커피 연구소': ['김수민', '공유', '김고은'],
+    '오각': ['김수민', '박보검', '김유정'],
+    '독서': ['김수민', '이종석', '한효주'],
+    '운동': ['김수민', '마동석', '손석구'],
+    '여행': ['김수민', '차은우', '문가영'],
+    '코딩': ['김수민', '남주혁', '배수지'],
+  };
+
+  final members = groupMembers[name];
+  if (members == null) return [];
+
+  final assets = [
+    'asset/image/alexander-lunyov-jdBFglNgYKc-unsplash.jpg',
+    'asset/image/chris-weiher-jgvEtA9yhDI-unsplash.jpg',
+    'asset/image/rafael-as-martins-3sGqa8YJIXg-unsplash.jpg',
+    'asset/image/edgar-X3ZDEajyqVs-unsplash.jpg',
+    'asset/image/ella-arie-_CfSrr0D2hE-unsplash.jpg',
+  ];
+
+  final contents = [
+    '행복한 하루였다.',
+    '요즘 날씨가 많이 풀렸다.',
+    '정신없는 연초.',
+    '주말이 기다려진다.',
+    '올해도 얼마 안 남았네.',
+    '커피 한 잔의 여유.',
+    '산책하기 좋은 날씨.',
+    '사진첩을 정리하다가.',
+    '새로운 시작을 응원하며.',
+  ];
+
+  final dates = [
+    ['2026.02.15', '2026.01.20', '2025.12.10'],
+    ['2026.02.10', '2026.01.15', '2025.12.05'],
+    ['2026.02.05', '2026.01.10', '2025.12.01'],
+  ];
+
+  final hash = name.hashCode;
+  List<PostData> posts = [];
+
+  for (int m = 0; m < members.length; m++) {
+    for (int p = 0; p < 3; p++) {
+      int idx = (hash + m * 3 + p).abs();
+      posts.add(PostData(
+        imagePath: assets[idx % assets.length],
+        date: dates[(m + p + hash) % 3]
+            [p], // Mix up dates so m=0 isn't always the newest
+        author: members[m],
+        content: contents[idx % contents.length],
+        isBookmarked: (idx % 7 == 0),
+      ));
+    }
+  }
+
+  // 최신순으로 정렬해서 반환
+  return posts..sort((a, b) => b.date.compareTo(a.date));
+}
+
+List<_RecentPostInfo> _getAllRecentPosts() {
+  List<_RecentPostInfo> allPosts = [];
+  for (var group in _groupSamples) {
+    final posts = _getDummyPostsByGroupName(group.name);
+    for (var post in posts) {
+      // Parse date 'YYYY.MM.DD' to DateTime
+      final parts = post.date.split('.');
+      DateTime dt = DateTime.now();
+      if (parts.length == 3) {
+        dt = DateTime(
+          int.tryParse(parts[0]) ?? 2026,
+          int.tryParse(parts[1]) ?? 1,
+          int.tryParse(parts[2]) ?? 1,
+        );
+      }
+
+      allPosts.add(_RecentPostInfo(
+        groupName: group.name,
+        groupImage: group.imageAsset,
+        content: post.content,
+        date:
+            '${parts.length == 3 ? parts[1] : '01'}.${parts.length == 3 ? parts[2] : '01'}',
+        dateTime: dt,
+        isRead:
+            false, // For dummy purpose, all are unread to show up in the Recent feed
+        author: post.author,
+      ));
+    }
+  }
+
+  // Sort by newest
+  allPosts.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+  return allPosts;
+}
+
 class _GroupRow extends StatelessWidget {
   const _GroupRow({
     required this.items,
@@ -1091,12 +1195,19 @@ class _GroupCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        if (info.name == '집단적 독백') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const GroupScreen()),
-          );
-        }
+        final posts = _getDummyPostsByGroupName(info.name);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => GroupScreen(
+              groupName: info.name,
+              groupDescription: info.description,
+              membersCount: 6,
+              coverImage: info.imageAsset,
+              initialPosts: posts,
+            ),
+          ),
+        );
       },
       child: SizedBox(
         width: 72.w,
@@ -1396,6 +1507,7 @@ class _RecentPostInfo {
   final String date;
   final bool isRead;
   final DateTime dateTime;
+  final String author;
 
   const _RecentPostInfo({
     required this.groupName,
@@ -1404,108 +1516,9 @@ class _RecentPostInfo {
     required this.date,
     this.isRead = false,
     required this.dateTime,
+    this.author = '알 수 없음',
   });
 }
-
-// 최신글 더미 데이터
-final List<_RecentPostInfo> _recentPostSamples = [
-  // 따뜻한 티타임 (읽지 않음)
-  _RecentPostInfo(
-    groupName: '따뜻한 티타임',
-    groupImage: 'asset/image/alexander-lunyov-jdBFglNgYKc-unsplash.jpg',
-    content: '오늘 마신 얼그레이는 정말 향긋했어요. 비 오는 날에 딱 어울리는 차였습니다.',
-    date: '10.24',
-    isRead: false,
-    dateTime: DateTime(2023, 10, 24, 14, 30),
-  ),
-  _RecentPostInfo(
-    groupName: '집단적 독백',
-    groupImage: 'asset/image/alexander-lunyov-jdBFglNgYKc-unsplash.jpg',
-    content: '새로 산 찻잔을 자랑하고 싶어요! 파란색 무늬가 들어가서 아주 예쁩니다.',
-    date: '10.23',
-    isRead: false,
-    dateTime: DateTime(2023, 10, 23, 18, 00),
-  ),
-  // 새벽산책 (읽음 - 최신글 목록에 안 나와야 함)
-  _RecentPostInfo(
-    groupName: '새벽산책',
-    groupImage: 'asset/image/chris-weiher-jgvEtA9yhDI-unsplash.jpg',
-    content: '새벽 공기가 이제 꽤 차갑네요. 다들 감기 조심하세요.',
-    date: '10.24',
-    isRead: true, // 읽음 처리
-    dateTime: DateTime(2023, 10, 24, 06, 00),
-  ),
-  _RecentPostInfo(
-    groupName: '새벽산책',
-    groupImage: 'asset/image/chris-weiher-jgvEtA9yhDI-unsplash.jpg',
-    content: '오늘 아침 노을이 정말 아름다웠어요. 사진 한 장 공유합니다.',
-    date: '10.22',
-    isRead: true, // 읽음 처리
-    dateTime: DateTime(2023, 10, 22, 06, 30),
-  ),
-  // 필름로그 (읽지 않음)
-  _RecentPostInfo(
-    groupName: '필름로그',
-    groupImage: 'asset/image/edgar-X3ZDEajyqVs-unsplash.jpg',
-    content: '코닥 골드 200으로 찍은 지난 주말의 풍경입니다.',
-    date: '10.22',
-    isRead: false,
-    dateTime: DateTime(2023, 10, 22, 12, 00),
-  ),
-  // 북클럽 소담 (읽지 않음)
-  _RecentPostInfo(
-    groupName: '북클럽 소담',
-    groupImage: 'asset/image/ella-arie-_CfSrr0D2hE-unsplash.jpg',
-    content: '이번 주 지정 도서 \'침묵의 봄\'을 읽고 있습니다. 환경에 대해 다시 생각하게 되네요.',
-    date: '10.21',
-    isRead: false,
-    dateTime: DateTime(2023, 10, 21, 20, 00),
-  ),
-  _RecentPostInfo(
-    groupName: '북클럽 소담',
-    groupImage: 'asset/image/ella-arie-_CfSrr0D2hE-unsplash.jpg',
-    content: '다음 주 모임 장소가 변경되었습니다. 공지 확인 부탁드려요!',
-    date: '10.20',
-    isRead: false,
-    dateTime: DateTime(2023, 10, 20, 10, 00),
-  ),
-  // 소금커피 연구소 (읽지 않음)
-  _RecentPostInfo(
-    groupName: '소금커피 연구소',
-    groupImage: 'asset/image/marek-piwnicki-ktllNfb9cBs-unsplash.jpg',
-    content: '히말라야 핑크솔트를 넣은 라떼, 의외로 고소하고 맛있네요.',
-    date: '10.19',
-    isRead: false,
-    dateTime: DateTime(2023, 10, 19, 13, 00),
-  ),
-  // 가을 등산 (읽지 않음)
-  _RecentPostInfo(
-    groupName: '가을 등산',
-    groupImage: 'asset/image/rafael-as-martins-3sGqa8YJIXg-unsplash.jpg',
-    content: '이번 주말 단풍 구경 어디로 갈까요? 설악산이 절정이라고 하네요.',
-    date: '10.18',
-    isRead: false,
-    dateTime: DateTime(2023, 10, 18, 10, 00),
-  ),
-  // 요리 조리 (읽지 않음)
-  _RecentPostInfo(
-    groupName: '요리 조리',
-    groupImage: 'asset/icon/letter.svg',
-    content: '집에서 만드는 파스타 레시피 공유합니다. 아주 쉬워요!',
-    date: '10.17',
-    isRead: false,
-    dateTime: DateTime(2023, 10, 17, 18, 30),
-  ),
-  // 영화 모임 (읽지 않음)
-  _RecentPostInfo(
-    groupName: '영화 모임',
-    groupImage: 'asset/icon/ic_round-photo.svg',
-    content: '이번 달 상영작 추천 받습니다. 장르 상관 없어요.',
-    date: '10.16',
-    isRead: false,
-    dateTime: DateTime(2023, 10, 16, 21, 00),
-  ),
-];
 
 // 최신글 리스트 섹션
 class _RecentPostsList extends StatefulWidget {
@@ -1550,13 +1563,12 @@ class _RecentPostsListState extends State<_RecentPostsList> {
   }
 
   void _initData() {
-    // 1. 읽지 않은 글만 필터링
-    final List<_RecentPostInfo> unreadPosts =
-        _recentPostSamples.where((post) => !post.isRead).toList();
+    // 1. 전체 최신글 덤핑 가져오기
+    final List<_RecentPostInfo> allRecentPosts = _getAllRecentPosts();
 
-    // 2. 그룹별로 묶기
+    // 2. 그룹별로 묶기 (각 그룹당 최대 2개까지만 표시)
     final Map<String, List<_RecentPostInfo>> groupedPosts = {};
-    for (var post in unreadPosts) {
+    for (var post in allRecentPosts) {
       if (!groupedPosts.containsKey(post.groupName)) {
         groupedPosts[post.groupName] = [];
       }
@@ -1565,7 +1577,7 @@ class _RecentPostsListState extends State<_RecentPostsList> {
       }
     }
 
-    // 3. 정렬
+    // 3. 정렬 (가장 최신 글을 보유한 그룹이 상단으로)
     _allSortedGroups = groupedPosts.entries.toList()
       ..sort((a, b) {
         final DateTime latestA = a.value.map((e) => e.dateTime).reduce(
